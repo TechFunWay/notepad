@@ -1,0 +1,7 @@
+node_modules
+dist
+release
+*.db
+data
+.git
+.DS_Store

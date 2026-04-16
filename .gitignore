@@ -4,7 +4,7 @@
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
 
 # Thumbnails
 ._*
@@ -24,3 +24,21 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Build output
+release/
+server/static/dist/
+
+# Frontend
+web/node_modules/
+web/dist/
+
+# Data
+*.db
+data/
+
+# Go
+server/notepad
+
+# Docker
+.docker/

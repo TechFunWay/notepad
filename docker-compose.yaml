@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  notepad:
+    image: wycto/notepad:latest
+    container_name: notepad
+    ports:
+      - "8904:8904"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PORT=8904
+      - DB_PATH=/app/data/notepad.db
+      - JWT_SECRET=change-me-in-production
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
