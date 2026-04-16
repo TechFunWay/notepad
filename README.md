@@ -1,37 +1,133 @@
-# 记事本
+# 记事本 (Notepad)
 
-#### 介绍
-记事本应用，可以安装到飞牛应用中心
+一个支持多用户的记事本 Web 应用，可部署到飞牛NAS、Docker 或直接运行。
 
-#### 软件架构
-软件架构说明
+## 技术栈
 
+- **前端**: Vue 3 + Element Plus + Vite
+- **后端**: Go + Gin + SQLite (modernc.org/sqlite, 纯 Go 无 CGO)
+- **认证**: JWT + bcrypt
 
-#### 安装教程
+## 功能特性
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+- 笔记的创建、编辑、删除、搜索
+- 多用户注册登录，数据完全隔离
+- 管理员管理用户和系统配置
+- 安全问题找回密码
+- 终端命令恢复管理员账号
+- 一条数据一个配置项，管理员可控制是否允许注册等
+- 首个注册用户自动成为超级管理员（唯一）
+- 数据库自动迁移，支持版本升级
 
-#### 使用说明
+## 快速开始
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+### 直接运行
 
-#### 参与贡献
+```bash
+# 从 release 目录下载对应平台的二进制文件
+./notepad
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+# 访问 http://localhost:8904
+# 第一个注册的用户自动成为管理员
+```
 
+### Docker 运行
 
-#### 特技
+```bash
+docker run -d \
+  --name notepad \
+  -p 8904:8904 \
+  -v ./data:/app/data \
+  -e JWT_SECRET=your-secret-key \
+  wycto/notepad:latest
+```
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+### Docker Compose
+
+```bash
+# 编辑 docker-compose.yaml 中的 JWT_SECRET
+docker compose up -d
+```
+
+### 飞牛NAS 安装
+
+1. 下载 `notepad_<version>_fpk.tar.gz`
+2. 在飞牛应用中心选择"手动安装"
+3. 上传 FPK 包
+4. 按向导提示配置端口和 JWT 密钥
+
+## 终端命令
+
+```bash
+# 查看管理员用户名
+./notepad find-admin
+
+# 重置管理员密码
+./notepad recover-admin
+
+# 列出所有用户
+./notepad list-users
+```
+
+## 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| PORT | 8904 | 服务端口 |
+| DB_PATH | ./data/notepad.db | SQLite 数据库路径 |
+| JWT_SECRET | 随机生成 | JWT 签名密钥（建议设置固定值） |
+| DATA_DIR | ./data | 数据目录 |
+
+## 从源码构建
+
+```bash
+# 前置要求: Go 1.22+, Node.js 20+
+
+# 完整构建（前端+后端+FPK）
+./deploy/scripts/build.sh
+
+# 或使用 Makefile
+make build          # 当前平台
+make cross-compile  # 多平台交叉编译
+make fpk            # 飞牛 FPK 包
+```
+
+构建产物输出到 `release/<version>/` 目录。
+
+## 项目结构
+
+```
+├── server/              # Go 后端
+│   ├── main.go          # 入口（服务器/CLI）
+│   ├── cmd/             # 服务启动 + CLI 命令
+│   ├── config/          # 配置加载
+│   ├── database/        # SQLite + 迁移
+│   ├── model/           # 数据模型
+│   ├── handler/         # API 处理器
+│   ├── middleware/       # 认证/CORS
+│   ├── auth/            # JWT 工具
+│   ├── router/          # 路由注册
+│   └── static/          # 嵌入前端资源
+├── web/                 # Vue 3 前端
+│   └── src/
+│       ├── views/       # 页面视图
+│       ├── components/  # 布局组件
+│       ├── stores/      # Pinia 状态
+│       ├── api/         # API 调用
+│       └── router/      # 前端路由
+├── deploy/
+│   ├── fpk/             # 飞牛 FPK 包
+│   ├── icons/           # 应用图标
+│   └── scripts/         # 构建脚本
+├── VERSION              # 版本号
+├── Makefile             # 构建入口
+└── Dockerfile           # Docker 多阶段构建
+```
+
+## 升级
+
+数据库支持自动迁移。升级时只需替换二进制文件或更新 Docker 镜像，数据库会自动升级到最新版本。
+
+## License
+
+MIT
