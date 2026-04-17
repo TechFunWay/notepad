@@ -26,8 +26,9 @@ func ListNotes(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 	search := c.Query("q")
 	tag := c.Query("tag")
+	sortBy := c.DefaultQuery("sort_by", "updated_at")
 
-	result, err := model.ListNotes(userID.(int64), page, pageSize, search, tag)
+	result, err := model.ListNotes(userID.(int64), page, pageSize, search, tag, sortBy)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取笔记列表失败"})
 		return

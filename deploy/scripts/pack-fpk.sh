@@ -14,10 +14,26 @@ echo "==> Building FPK package v${VERSION}..."
 # Update version in manifest
 sed -i.bak "s/version=.*/version=${VERSION}/" "$FPK_DIR/manifest" && rm -f "$FPK_DIR/manifest.bak"
 
-# Update docker image version
-sed -i.bak "s|image: wycto/notepad:.*|image: wycto/notepad:${VERSION}|" "$FPK_DIR/app/docker/docker-compose.yaml" && rm -f "$FPK_DIR/app/docker/docker-compose.yaml.bak"
+# Copy frontend files
+echo "==> Copying frontend files..."
+rm -rf "$FPK_DIR/app/ui"
+mkdir -p "$FPK_DIR/app/ui"
+mkdir -p "$FPK_DIR/app/ui/images"
+cp -r "$PROJECT_DIR/web/dist"/* "$FPK_DIR/app/ui/"
 
-# Make sure all cmd scripts are executable
+# Create UI config file
+echo '{"name": "notepad", "version": "1.0.0", "port": 8904}' > "$FPK_DIR/app/ui/config"
+
+# Copy backend executable
+echo "==> Copying backend files..."
+cp "$PROJECT_DIR/server/notepad-server" "$FPK_DIR/app/"
+chmod +x "$FPK_DIR/app/notepad-server"
+
+# Copy native scripts
+cp -r "$FPK_DIR/app/native"/* "$FPK_DIR/app/"
+
+# Make sure all scripts are executable
+chmod +x "$FPK_DIR/app/"*.sh
 chmod +x "$FPK_DIR/cmd/"*
 
 # Copy icons if they exist

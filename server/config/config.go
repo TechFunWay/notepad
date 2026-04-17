@@ -7,26 +7,33 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
 	Port      int
 	DataDir   string
+	WebDir    string
+	UploadDir string
+	ShareDirs string
 	JWTSecret string
 }
 
 func (c *Config) DBPath() string {
-	return filepath.Join(c.DataDir, "db", "notepad.db")
+	return filepath.Join(c.DataDir, "notepad.db")
 }
 
 func (c *Config) LogDir() string {
 	return filepath.Join(c.DataDir, "logs")
 }
 
-func Load(port int, dataDir string) *Config {
+func Load(port int, dataDir, webDir, uploadDir, shareDirs string) *Config {
 	cfg := &Config{
-		Port:    port,
-		DataDir: dataDir,
+		Port:      port,
+		DataDir:   dataDir,
+		WebDir:    webDir,
+		UploadDir: uploadDir,
+		ShareDirs: shareDirs,
 	}
 
 	if cfg.Port <= 0 {
@@ -48,6 +55,28 @@ func Load(port int, dataDir string) *Config {
 		}
 	}
 
+	if cfg.WebDir == "" {
+		if v := os.Getenv("WEB_DIR"); v != "" {
+			cfg.WebDir = v
+		} else {
+			cfg.WebDir = "./www"
+		}
+	}
+
+	if cfg.UploadDir == "" {
+		if v := os.Getenv("UPLOAD_DIR"); v != "" {
+			cfg.UploadDir = v
+		} else {
+			cfg.UploadDir = filepath.Join(cfg.DataDir, "upload")
+		}
+	}
+
+	if cfg.ShareDirs == "" {
+		if v := os.Getenv("SHARE_DIRS"); v != "" {
+			cfg.ShareDirs = v
+		}
+	}
+
 	if v := os.Getenv("JWT_SECRET"); v != "" {
 		cfg.JWTSecret = v
 	}
@@ -58,11 +87,26 @@ func Load(port int, dataDir string) *Config {
 	}
 
 	// 创建数据目录结构
-	os.MkdirAll(filepath.Join(cfg.DataDir, "db"), 0755)
+	os.MkdirAll(cfg.DataDir, 0755)
 	os.MkdirAll(filepath.Join(cfg.DataDir, "logs"), 0755)
-	os.MkdirAll(filepath.Join(cfg.DataDir, "upload"), 0755)
+	os.MkdirAll(cfg.UploadDir, 0755)
 
 	return cfg
+}
+
+func (c *Config) ShareDirPaths() []string {
+	if c.ShareDirs == "" {
+		return nil
+	}
+	parts := strings.Split(c.ShareDirs, ":")
+	var result []string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			result = append(result, p)
+		}
+	}
+	return result
 }
 
 func generateRandomSecret() string {

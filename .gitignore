@@ -43,3 +43,7 @@ server/notepad
 # Docker
 .docker/
 .idea
+web/dist
+web/node_modules
+server/data
+server/notepad-server

@@ -14,8 +14,8 @@ import (
 
 var appVersion = "dev"
 
-func StartServer(port int, dataDir string) {
-	cfg := config.Load(port, dataDir)
+func StartServer(port int, dataDir, webDir, uploadDir, shareDirs string) {
+	cfg := config.Load(port, dataDir, webDir, uploadDir, shareDirs)
 
 	if err := logger.Init(cfg.LogDir()); err != nil {
 		fmt.Printf("Failed to initialize logger: %v\n", err)
@@ -32,9 +32,14 @@ func StartServer(port int, dataDir string) {
 
 	auth.Init(cfg.JWTSecret)
 
-	handler.SetUploadDir(filepath.Join(cfg.DataDir, "upload"))
+	uploadPath := cfg.UploadDir
+	if uploadPath == "" {
+		uploadPath = filepath.Join(cfg.DataDir, "upload")
+	}
 
-	r := router.Setup(filepath.Join(cfg.DataDir, "upload"))
+	handler.SetUploadDir(uploadPath)
+
+	r := router.Setup(uploadPath, cfg.WebDir)
 	r.Run(fmt.Sprintf(":%d", cfg.Port))
 }
 

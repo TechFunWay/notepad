@@ -1,0 +1,18 @@
+{
+    "data-share":
+    {
+        "shares":
+        [
+            {
+                "name": "techfunway-notepad",
+                "permission":
+                {
+                    "rw":
+                    [
+                        "techfunway-notepad"
+                    ]
+                }
+            }
+        ]
+    }
+}

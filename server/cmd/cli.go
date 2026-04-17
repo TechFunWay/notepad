@@ -17,7 +17,7 @@ func ExecuteCLI(args []string) {
 		return
 	}
 
-	cfg := config.Load(0, "")
+	cfg := config.Load(0, "", "", "", "")
 	if err := database.Init(cfg.DBPath(), appVersion); err != nil {
 		fmt.Printf("Failed to initialize database: %v\n", err)
 		return
