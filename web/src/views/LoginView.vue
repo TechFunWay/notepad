@@ -501,16 +501,21 @@ async function handleLogin() {
 
 @media (max-width: 480px) {
   .login-wrapper {
-    padding: 0;
+    padding: 16px;
   }
 
   .login-card {
-    border-radius: 0;
-    min-height: 100vh;
+    border-radius: 20px;
+    min-height: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  }
+
+  .login-left {
+    display: none;
   }
 
   .login-right {
-    padding: 32px 20px 20px;
+    padding: 40px 24px 32px;
   }
 
   .form-header {
