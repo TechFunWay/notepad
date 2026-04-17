@@ -38,7 +38,7 @@
             <h2>开始注册</h2>
             <p>只需几步即可完成注册</p>
           </div>
-          <el-form :model="form" class="register-form">
+          <el-form :model="form" class="register-form" label-width="0">
             <el-form-item>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><User /></el-icon>
@@ -448,23 +448,31 @@ async function handleRegister() {
 @media (max-width: 480px) {
   .register-wrapper {
     padding: 0;
+    max-width: 100%;
   }
 
   .register-card {
     border-radius: 0;
     min-height: 100vh;
+    max-width: none;
+    width: 100%;
   }
 
   .register-container {
-    align-items: flex-start;
+    align-items: stretch;
   }
 
   .register-right {
-    padding: 32px 16px 20px;
+    padding: 24px 16px 16px;
+    gap: 0;
+    width: 100%;
+    box-sizing: border-box;
+    flex: 1;
   }
 
   .form-header {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    width: 100%;
   }
 
   .form-header h2 {
@@ -477,24 +485,67 @@ async function handleRegister() {
 
   .register-form {
     margin-bottom: 0;
+    width: 100%;
   }
 
+  /* Force form items to be full-width block elements */
   .register-form :deep(.el-form-item) {
     margin-bottom: 10px;
+    display: block !important;
+    width: 100% !important;
   }
 
   .register-form :deep(.el-form-item:last-child) {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Remove label space completely */
+  .register-form :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Target the actual input and button elements */
+  .register-form :deep(.el-form-item .el-input) {
+    width: 100% !important;
+  }
+
+  .register-form :deep(.el-form-item .el-input__wrapper) {
+    width: 100% !important;
+  }
+
+  .register-form :deep(.el-form-item .el-button) {
+    width: 100% !important;
+  }
+
+  .input-wrapper {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .custom-input {
+    width: 100%;
+  }
+
+  .custom-input :deep(.el-input) {
+    width: 100% !important;
+  }
+
+  .custom-input :deep(.el-input__wrapper) {
+    width: 100% !important;
   }
 
   .submit-btn {
     margin-top: 0;
     height: 48px;
+    width: 100% !important;
   }
 
   .form-footer {
-    margin-top: auto;
-    padding-top: 16px;
+    margin-top: 12px;
+    padding-top: 0;
+    width: 100%;
   }
 
   .login-prompt {
