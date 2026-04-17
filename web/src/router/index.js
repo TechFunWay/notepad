@@ -28,6 +28,11 @@ const routes = [
         component: () => import('@/views/NotesView.vue')
       },
       {
+        path: 'notes-list',
+        name: 'NotesList',
+        component: () => import('@/views/NotesListView.vue')
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/ProfileView.vue')

@@ -1,22 +1,25 @@
 #!/bin/bash
 ACTION=$1
-COMPOSE_FILE="$(dirname "$0")/../app/docker/docker-compose.yaml"
+APP_DIR="$(dirname "$0")/../app"
 
 case "$ACTION" in
   start)
-    docker compose -f "$COMPOSE_FILE" up -d
+    "$APP_DIR/start.sh"
     exit $?
     ;;
   stop)
-    docker compose -f "$COMPOSE_FILE" down
+    "$APP_DIR/stop.sh"
     exit $?
     ;;
   restart)
-    docker compose -f "$COMPOSE_FILE" restart
+    "$APP_DIR/stop.sh"
+    sleep 1
+    "$APP_DIR/start.sh"
     exit $?
     ;;
   status)
-    if docker inspect -f '{{.State.Running}}' fnos_notepad 2>/dev/null | grep -q "true"; then
+    PID=$(lsof -t -i :8904 2>/dev/null)
+    if [ -n "$PID" ]; then
       echo "running"
       exit 0
     else

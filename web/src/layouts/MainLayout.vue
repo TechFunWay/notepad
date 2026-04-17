@@ -10,6 +10,7 @@
               </div>
               <span class="logo-text">记事本</span>
             </router-link>
+            <span class="version">{{ version }}</span>
           </div>
           <div class="header-right">
             <el-dropdown trigger="click" class="user-dropdown">
@@ -69,11 +70,22 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, User, SwitchButton, Setting, UserFilled, Tools, ArrowDown } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/api/request'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const user = computed(() => auth.user)
+const version = ref('1.0.0')
+
+async function fetchVersion() {
+  try {
+    const { data } = await api.get('/version')
+    version.value = data.version || '1.0.0'
+  } catch {
+    version.value = '1.0.0'
+  }
+}
 
 async function handleLogout() {
   try {
@@ -90,6 +102,7 @@ async function handleLogout() {
 }
 
 onMounted(() => {
+  fetchVersion()
 })
 
 onUnmounted(() => {
@@ -281,7 +294,24 @@ onUnmounted(() => {
   }
 
   .main-content {
-    padding: 16px;
+    padding: 8px;
+  }
+}
+
+.version {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 768px) {
+  .version {
+    font-size: 10px;
+    padding: 2px 8px;
   }
 }
 </style>

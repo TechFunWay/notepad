@@ -54,7 +54,7 @@ func GetNote(id, userID int64) (*Note, error) {
 	return note, nil
 }
 
-func ListNotes(userID int64, page, pageSize int, search, tag string) (*NoteListResponse, error) {
+func ListNotes(userID int64, page, pageSize int, search, tag, sortBy string) (*NoteListResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -87,10 +87,18 @@ func ListNotes(userID int64, page, pageSize int, search, tag string) (*NoteListR
 	}
 
 	queryArgs := append([]interface{}{}, args...)
+	
+	orderClause := "ORDER BY updated_at DESC"
+	if sortBy == "title" {
+		orderClause = "ORDER BY title ASC"
+	} else if sortBy == "created_at" {
+		orderClause = "ORDER BY created_at DESC"
+	}
+	
 	queryArgs = append(queryArgs, pageSize, offset)
 
 	rows, err := database.DB.Query(
-		"SELECT id, user_id, title, content, tags, created_at, updated_at FROM notes "+conditions+" ORDER BY updated_at DESC LIMIT ? OFFSET ?",
+		"SELECT id, user_id, title, content, tags, created_at, updated_at FROM notes "+conditions+" "+orderClause+" LIMIT ? OFFSET ?",
 		queryArgs...,
 	)
 	if err != nil {

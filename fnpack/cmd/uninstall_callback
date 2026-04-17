@@ -1,0 +1,19 @@
+#!/bin/bash
+
+### This script is called after the user uninstalls the application.
+
+# 获取用户在向导中的选择
+DATA_ACTION="$wizard_data_action"
+
+# 根据用户选择执行相应逻辑
+if [ "${DATA_ACTION}" = "delete" ]; then
+  # 检查文件/目录是否存在后再删除
+  if [ -d "$TRIM_PKGVAR" ]; then
+      rm -rf "$TRIM_PKGVAR"
+      echo "目录已删除"
+  fi
+else
+    echo "保留数据..."
+fi
+
+exit 0

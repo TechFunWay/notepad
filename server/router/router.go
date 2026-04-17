@@ -12,7 +12,7 @@ import (
 	"notepad/static"
 )
 
-func Setup(uploadDir string) *gin.Engine {
+func Setup(uploadDir string, webDir string) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
@@ -54,11 +54,30 @@ func Setup(uploadDir string) *gin.Engine {
 		admin.PUT("/configs/:key", handler.UpdateConfig)
 	}
 
-	// SPA static files - prioritize external dist directory for development
-	distDir := "./static/dist"
-	if _, err := os.Stat(distDir); err == nil {
-		// Use external dist directory if it exists
-		fileServer := http.FileServer(http.Dir(distDir))
+	// SPA static files - priority: webDir > external dist > embedded
+	var fileServer http.Handler
+	var useWebDir bool
+
+	if webDir != "" {
+		if _, err := os.Stat(webDir); err == nil {
+			fileServer = http.FileServer(http.Dir(webDir))
+			useWebDir = true
+		}
+	}
+
+	if !useWebDir {
+		distDir := "./static/dist"
+		if _, err := os.Stat(distDir); err == nil {
+			fileServer = http.FileServer(http.Dir(distDir))
+		} else {
+			distFS, err := fs.Sub(static.StaticFS, "dist")
+			if err == nil {
+				fileServer = http.FileServer(http.FS(distFS))
+			}
+		}
+	}
+
+	if fileServer != nil {
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
 			if strings.HasPrefix(path, "/api") {
@@ -66,39 +85,33 @@ func Setup(uploadDir string) *gin.Engine {
 				return
 			}
 
-			// Try to serve the file directly
-			if _, err := os.Stat(distDir + path); err == nil {
-				fileServer.ServeHTTP(c.Writer, c.Request)
-				return
+			if useWebDir {
+				if _, err := os.Stat(webDir + path); err == nil {
+					fileServer.ServeHTTP(c.Writer, c.Request)
+					return
+				}
+			} else {
+				distDir := "./static/dist"
+				if _, err := os.Stat(distDir); err == nil {
+					if _, err := os.Stat(distDir + path); err == nil {
+						fileServer.ServeHTTP(c.Writer, c.Request)
+						return
+					}
+				} else {
+					distFS, err := fs.Sub(static.StaticFS, "dist")
+					if err == nil {
+						if _, err := distFS.Open(strings.TrimPrefix(path, "/")); err == nil {
+							fileServer.ServeHTTP(c.Writer, c.Request)
+							return
+						}
+					}
+				}
 			}
 
 			// SPA fallback: serve index.html
 			c.Request.URL.Path = "/"
 			fileServer.ServeHTTP(c.Writer, c.Request)
 		})
-	} else {
-		// Fall back to embedded filesystem
-		distFS, err := fs.Sub(static.StaticFS, "dist")
-		if err == nil {
-			fileServer := http.FileServer(http.FS(distFS))
-			r.NoRoute(func(c *gin.Context) {
-				path := c.Request.URL.Path
-				if strings.HasPrefix(path, "/api") {
-					c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
-					return
-				}
-
-				// Try to serve the file directly
-				if _, err := distFS.Open(strings.TrimPrefix(path, "/")); err == nil {
-					fileServer.ServeHTTP(c.Writer, c.Request)
-					return
-				}
-
-				// SPA fallback: serve index.html
-				c.Request.URL.Path = "/"
-				fileServer.ServeHTTP(c.Writer, c.Request)
-			})
-		}
 	}
 
 	return r

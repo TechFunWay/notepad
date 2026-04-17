@@ -76,7 +76,7 @@
       </div>
     </div>
 
-    <div class="notes-editor" :class="{ 'editor-fullscreen': isMobile && currentNote }">
+    <div class="notes-editor">
       <template v-if="currentNote">
         <div v-if="isMobile" class="editor-mobile-top">
           <el-button class="back-btn" :icon="ArrowLeft" text @click="backToList">
@@ -156,9 +156,6 @@
             </div>
             <h2>欢迎回来</h2>
             <p>开始记录您的灵感与想法</p>
-            <el-button v-if="isMobile" type="primary" class="empty-btn" :icon="FolderOpened" @click="sidebarOpen = true">
-              <span>查看笔记列表</span>
-            </el-button>
           </div>
           
           <div class="dashboard-stats">
@@ -197,7 +194,7 @@
                 <div class="recent-note-time">{{ formatDate(note.updated_at) }}</div>
               </div>
               <div v-if="recentNotes.length === 0" class="no-recent-notes">
-                <p>还没有笔记，点击左侧按钮创建第一个笔记</p>
+                <p>还没有笔记，点击上方按钮创建第一个笔记</p>
               </div>
             </div>
           </div>
@@ -208,12 +205,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { Plus, Check, Delete, Document, EditPen, ArrowLeft, FolderOpened, Notebook, Clock, Search, Tickets, Close, Calendar, Edit } from '@element-plus/icons-vue'
-import { getNotes, createNote, updateNote, deleteNote } from '@/api/note'
+import { getNotes, createNote, updateNote, deleteNote, getNote } from '@/api/note'
 import api from '@/api/request'
 import { ElMessage } from 'element-plus'
 import TiptapEditor from '@/components/TiptapEditor.vue'
+
+const router = useRouter()
+const route = useRoute()
 
 const notes = ref([])
 const currentNote = ref(null)
@@ -233,16 +234,15 @@ const recentNotes = ref([])
 
 // 加载所有笔记
 function loadAllNotes() {
-  activeTag.value = ''
-  searchQuery.value = ''
-  loadNotes()
+  router.push('/notes-list')
 }
 
-onMounted(() => {
+onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  loadNotes()
-  loadTags()
+  await loadNotes()
+  await loadTags()
+  await openNoteFromQuery()
 })
 
 onUnmounted(() => {
@@ -280,6 +280,19 @@ async function loadTags() {
   } catch (e) {}
 }
 
+async function openNoteFromQuery() {
+  const noteId = route.query.note_id
+  if (!noteId) return
+  try {
+    const { data } = await getNote(noteId)
+    currentNote.value = { ...data }
+    currentTagInput.value = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+    isDirty.value = false
+  } catch (e) {
+    ElMessage.error('加载笔记失败')
+  }
+}
+
 function toggleTag(tag) {
   activeTag.value = activeTag.value === tag ? '' : tag
   loadNotes()
@@ -292,7 +305,12 @@ function debouncedSearch() {
 
 async function createNewNote() {
   try {
-    const { data } = await createNote({ title: '新笔记', content: '<p></p>', tags: '' })
+    const today = new Date()
+    const yy = String(today.getFullYear()).slice(2)
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const dd = String(today.getDate()).padStart(2, '0')
+    const title = `${yy}${mm}${dd}的笔记`
+    const { data } = await createNote({ title, content: '<p></p>', tags: '' })
     notes.value.unshift(data)
     currentNote.value = { ...data }
     currentTagInput.value = []
@@ -735,11 +753,11 @@ function formatFullDate(dateStr) {
   flex-direction: column;
   color: #6b7280;
   text-align: center;
-  padding: 40px;
+  padding: 16px;
 }
 
 .empty-animation {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .empty-icon-large {
@@ -757,7 +775,7 @@ function formatFullDate(dateStr) {
 .editor-empty p {
   font-size: 15px;
   color: #6b7280;
-  margin: 0 0 24px;
+  margin: 0 0 16px;
 }
 
 .empty-btn {
@@ -772,12 +790,12 @@ function formatFullDate(dateStr) {
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding: 8px 6px;
+  padding: 4px 0;
 }
 
 .dashboard-header {
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .dashboard-header h2 {
@@ -791,14 +809,14 @@ function formatFullDate(dateStr) {
 .dashboard-header p {
   font-size: 14px;
   color: #6b7280;
-  margin: 0 0 12px;
+  margin: 0 0 8px;
 }
 
 .dashboard-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .stat-card {
@@ -1039,21 +1057,11 @@ function formatFullDate(dateStr) {
   }
 
   .notes-sidebar {
-    position: fixed;
-    top: 56px;
-    left: 0;
-    bottom: 0;
-    width: 85vw;
-    max-width: 320px;
-    z-index: 101;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    box-shadow: none;
+    display: none;
   }
 
-  .notes-sidebar.sidebar-open {
-    transform: translateX(0);
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  .sidebar-overlay {
+    display: none;
   }
 
   .notes-editor {
@@ -1083,6 +1091,11 @@ function formatFullDate(dateStr) {
   .toolbar-right {
     width: 100%;
     justify-content: space-between;
+    padding-right: 4px;
+  }
+
+  .action-buttons {
+    flex-shrink: 0;
   }
 
   .tags-select {
