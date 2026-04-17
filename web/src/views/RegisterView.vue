@@ -427,24 +427,48 @@ async function handleRegister() {
   .register-card {
     max-width: 480px;
     margin: 0 auto;
+    min-height: auto;
   }
 
   .register-right {
-    padding: 48px 32px;
+    padding: 32px 24px;
+    justify-content: flex-start;
+    gap: 20px;
   }
 }
 
 @media (max-width: 480px) {
   .register-wrapper {
-    padding: 16px;
+    padding: 0;
+  }
+
+  .register-card {
+    border-radius: 0;
+    min-height: 100vh;
+  }
+
+  .register-container {
+    align-items: flex-start;
   }
 
   .register-right {
-    padding: 32px 24px;
+    padding: 48px 20px 24px;
+  }
+
+  .form-header {
+    margin-bottom: 20px;
   }
 
   .form-header h2 {
-    font-size: 26px;
+    font-size: 24px;
+  }
+
+  .register-form {
+    margin-bottom: 16px;
+  }
+
+  .register-form :deep(.el-form-item) {
+    margin-bottom: 12px;
   }
 }
 </style>
