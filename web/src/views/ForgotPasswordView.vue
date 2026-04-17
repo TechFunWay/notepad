@@ -53,6 +53,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getSecurityQuestion, forgotPassword } from '../api/auth'
 import { ElMessage } from 'element-plus'
+import { md5 } from '@/utils/crypto'
 
 const router = useRouter()
 const loading = ref(false)
@@ -96,7 +97,11 @@ async function resetPassword() {
   }
   loading.value = true
   try {
-    await forgotPassword(form.value)
+    await forgotPassword({
+      username: form.value.username,
+      security_answer: form.value.security_answer,
+      new_password: md5(form.value.new_password)
+    })
     ElMessage.success('密码重置成功，请登录')
     router.push('/login')
   } catch (e) {
