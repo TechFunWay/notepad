@@ -433,7 +433,15 @@ async function handleRegister() {
   .register-right {
     padding: 32px 24px;
     justify-content: flex-start;
-    gap: 20px;
+    gap: 16px;
+  }
+
+  .form-header {
+    margin-bottom: 24px;
+  }
+
+  .register-form {
+    margin-bottom: 0;
   }
 }
 
@@ -452,23 +460,45 @@ async function handleRegister() {
   }
 
   .register-right {
-    padding: 48px 20px 24px;
+    padding: 32px 16px 20px;
   }
 
   .form-header {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .form-header h2 {
     font-size: 24px;
   }
 
+  .form-header p {
+    font-size: 13px;
+  }
+
   .register-form {
-    margin-bottom: 16px;
+    margin-bottom: 0;
   }
 
   .register-form :deep(.el-form-item) {
+    margin-bottom: 10px;
+  }
+
+  .register-form :deep(.el-form-item:last-child) {
     margin-bottom: 12px;
+  }
+
+  .submit-btn {
+    margin-top: 0;
+    height: 48px;
+  }
+
+  .form-footer {
+    margin-top: auto;
+    padding-top: 16px;
+  }
+
+  .login-prompt {
+    font-size: 13px;
   }
 }
 </style>
