@@ -65,6 +65,19 @@
             </el-form-item>
             <el-form-item>
               <div class="input-wrapper">
+                <el-icon class="input-icon"><Lock /></el-icon>
+                <el-input 
+                  v-model="form.password_confirm" 
+                  type="password" 
+                  placeholder="请再次输入密码" 
+                  size="large"
+                  show-password
+                  class="custom-input"
+                />
+              </div>
+            </el-form-item>
+            <el-form-item>
+              <div class="input-wrapper">
                 <el-icon class="input-icon"><QuestionFilled /></el-icon>
                 <el-input 
                   v-model="form.security_question" 
@@ -127,18 +140,28 @@ const loading = ref(false)
 const form = reactive({
   username: '',
   password: '',
+  password_confirm: '',
   security_question: '',
   security_answer: ''
 })
 
 async function handleRegister() {
-  if (!form.username || !form.password) {
+  if (!form.username || !form.password || !form.password_confirm) {
     ElMessage.warning('请填写必要信息')
+    return
+  }
+  if (form.password !== form.password_confirm) {
+    ElMessage.warning('两次输入的密码不一致')
     return
   }
   loading.value = true
   try {
-    await auth.register(form)
+    await auth.register({
+      username: form.username,
+      password: form.password,
+      security_question: form.security_question,
+      security_answer: form.security_answer
+    })
     ElMessage.success('注册成功')
     router.push('/')
   } catch (e) {
