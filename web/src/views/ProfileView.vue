@@ -85,6 +85,7 @@ import { ref } from 'vue'
 import { changePassword } from '../api/auth'
 import { ElMessage } from 'element-plus'
 import { Lock, Key, Check } from '@element-plus/icons-vue'
+import { md5 } from '@/utils/crypto'
 
 const loading = ref(false)
 const form = ref({
@@ -109,8 +110,8 @@ async function handleChange() {
   loading.value = true
   try {
     await changePassword({
-      current_password: form.value.current_password,
-      new_password: form.value.new_password
+      current_password: md5(form.value.current_password),
+      new_password: md5(form.value.new_password)
     })
     ElMessage.success('密码修改成功')
     form.value = { current_password: '', new_password: '', confirm_password: '' }

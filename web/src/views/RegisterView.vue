@@ -132,6 +132,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { EditPen, User, Lock, QuestionFilled, Key, ArrowRight, Star, CircleCheck } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { md5 } from '@/utils/crypto'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -158,7 +159,7 @@ async function handleRegister() {
   try {
     await auth.register({
       username: form.username,
-      password: form.password,
+      password: md5(form.password),
       security_question: form.security_question,
       security_answer: form.security_answer
     })

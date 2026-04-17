@@ -110,6 +110,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { getUsers, createUser, updateUser, deleteUser } from '../../api/user'
 import { ElMessage } from 'element-plus'
+import { md5 } from '@/utils/crypto'
 
 const users = ref([])
 const createDialogVisible = ref(false)
@@ -144,7 +145,11 @@ function showCreateDialog() {
 
 async function handleCreate() {
   try {
-    await createUser(createForm.value)
+    await createUser({
+      username: createForm.value.username,
+      password: md5(createForm.value.password),
+      role: createForm.value.role
+    })
     ElMessage.success('创建成功')
     createDialogVisible.value = false
     loadUsers()
@@ -168,7 +173,7 @@ function showEditDialog(user) {
 async function handleEdit() {
   try {
     const payload = { role: editForm.value.role }
-    if (editForm.value.password) payload.password = editForm.value.password
+    if (editForm.value.password) payload.password = md5(editForm.value.password)
     await updateUser(editForm.value.id, payload)
     ElMessage.success('更新成功')
     editDialogVisible.value = false

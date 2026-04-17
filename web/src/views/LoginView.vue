@@ -112,6 +112,7 @@ import { ElMessage } from 'element-plus'
 import { Document, User, Lock, ArrowRight, EditPen, Tickets, Monitor } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useConfigStore } from '@/stores/config'
+import { md5 } from '@/utils/crypto'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -151,11 +152,12 @@ async function handleLogin() {
   }
   loading.value = true
   try {
-    await auth.login(form.username, form.password)
+    const hashedPassword = form.password.length === 32 ? form.password : md5(form.password)
+    await auth.login(form.username, hashedPassword)
     if (rememberMe.value) {
       localStorage.setItem('login_remember', JSON.stringify({
         username: form.username,
-        password: form.password
+        password: hashedPassword
       }))
     } else {
       localStorage.removeItem('login_remember')
