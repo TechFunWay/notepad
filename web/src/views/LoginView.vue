@@ -72,6 +72,11 @@
                 />
               </div>
             </div>
+            <div class="form-options">
+              <label class="remember-me">
+                <el-checkbox v-model="rememberMe">记住账号密码</el-checkbox>
+              </label>
+            </div>
             <div class="form-item">
               <el-button 
                 type="primary" 
@@ -113,6 +118,7 @@ const auth = useAuthStore()
 const config = useConfigStore()
 const loading = ref(false)
 const allowRegister = ref(true)
+const rememberMe = ref(false)
 
 const form = reactive({
   username: '',
@@ -122,6 +128,20 @@ const form = reactive({
 onMounted(async () => {
   await config.fetchPublicConfig()
   allowRegister.value = config.allowRegister
+
+  const saved = localStorage.getItem('login_remember')
+  if (saved) {
+    try {
+      const data = JSON.parse(saved)
+      form.username = data.username || ''
+      form.password = data.password || ''
+      if (form.username && form.password) {
+        rememberMe.value = true
+      }
+    } catch (e) {
+      localStorage.removeItem('login_remember')
+    }
+  }
 })
 
 async function handleLogin() {
@@ -132,6 +152,14 @@ async function handleLogin() {
   loading.value = true
   try {
     await auth.login(form.username, form.password)
+    if (rememberMe.value) {
+      localStorage.setItem('login_remember', JSON.stringify({
+        username: form.username,
+        password: form.password
+      }))
+    } else {
+      localStorage.removeItem('login_remember')
+    }
     ElMessage.success('登录成功')
     router.push('/')
   } catch (e) {
@@ -393,6 +421,31 @@ async function handleLogin() {
   transform: translateY(0);
 }
 
+.form-options {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.remember-me :deep(.el-checkbox__inner) {
+  border-radius: 4px;
+}
+
+.remember-me :deep(.el-checkbox__label) {
+  font-size: 14px;
+  color: #6b7280;
+}
+
 .form-footer {
   display: flex;
   flex-direction: column;
@@ -448,15 +501,36 @@ async function handleLogin() {
 
 @media (max-width: 480px) {
   .login-wrapper {
-    padding: 16px;
+    padding: 0;
+  }
+
+  .login-card {
+    border-radius: 0;
+    min-height: 100vh;
   }
 
   .login-right {
-    padding: 32px 24px;
+    padding: 32px 20px 20px;
+  }
+
+  .form-header {
+    margin-bottom: 24px;
   }
 
   .form-header h2 {
-    font-size: 26px;
+    font-size: 24px;
+  }
+
+  .login-form {
+    margin-bottom: 0;
+  }
+
+  .form-options {
+    margin-bottom: 16px;
+  }
+
+  .form-footer {
+    margin-top: 12px;
   }
 }
 </style>
