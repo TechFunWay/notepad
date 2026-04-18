@@ -115,8 +115,13 @@ func GetSecurityQuestion(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"security_question": user.SecurityQuestion})
 }
 
-func ForgotPassword(c *gin.Context) {
-	var req forgotPasswordRequest
+type verifySecurityAnswerRequest struct {
+	Username       string `json:"username" binding:"required"`
+	SecurityAnswer string `json:"security_answer" binding:"required"`
+}
+
+func VerifySecurityAnswer(c *gin.Context) {
+	var req verifySecurityAnswerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
 		return
@@ -128,17 +133,60 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 	if !valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "安全问题答案错误"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "安全答案错误"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "验证成功"})
+}
+
+type verifyAnswerRequest struct {
+	Username       string `json:"username" binding:"required"`
+	SecurityAnswer string `json:"security_answer" binding:"required"`
+}
+
+func VerifyAnswer(c *gin.Context) {
+	var req verifyAnswerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
 		return
 	}
 
-	user, _ := model.GetUserByUsername(req.Username)
-	if err := model.UpdatePassword(user.ID, req.NewPassword); err != nil {
+	valid, err := model.VerifySecurityAnswer(req.Username, req.SecurityAnswer)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "安全答案错误"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "验证成功"})
+}
+
+func ForgotPassword(c *gin.Context) {
+	var req forgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		return
+	}
+
+	// Verify security answer first
+	valid, err := model.VerifySecurityAnswer(req.Username, req.SecurityAnswer)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "安全答案错误"})
+		return
+	}
+
+	if err := model.UpdatePasswordByUsername(req.Username, req.NewPassword); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码重置失败"})
 		return
 	}
 
-	logger.Audit("Password reset via security question: %s", req.Username)
+	logger.Audit("Password reset: %s from %s", req.Username, c.ClientIP())
 	c.JSON(http.StatusOK, gin.H{"message": "密码重置成功"})
 }
 

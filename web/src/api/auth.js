@@ -4,6 +4,10 @@ export function getSecurityQuestion(username) {
   return api.get('/auth/security-question', { params: { username } })
 }
 
+export function verifyAnswer(data) {
+  return api.post('/auth/verify-answer', data)
+}
+
 export function forgotPassword(data) {
   return api.post('/auth/forgot-password', data)
 }

@@ -37,6 +37,9 @@
           <el-input v-model="form.new_password" type="password" placeholder="新密码（至少6位）" prefix-icon="Lock" size="large" show-password @keyup.enter="resetPassword" />
         </el-form-item>
         <el-form-item>
+          <el-input v-model="form.confirm_password" type="password" placeholder="请再次输入新密码" prefix-icon="Lock" size="large" show-password @keyup.enter="resetPassword" />
+        </el-form-item>
+        <el-form-item>
           <el-button type="primary" :loading="loading" @click="resetPassword" size="large" style="width: 100%">重置密码</el-button>
         </el-form-item>
       </el-form>
@@ -52,6 +55,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getSecurityQuestion, forgotPassword } from '../api/auth'
+import api from '../api/request'
 import { message } from '@/utils/message'
 import { md5 } from '@/utils/crypto'
 
@@ -62,21 +66,26 @@ const securityQuestion = ref('')
 const form = ref({
   username: '',
   security_answer: '',
-  new_password: ''
+  new_password: '',
+  confirm_password: ''
 })
 
 async function checkUsername() {
   if (!form.value.username) {
-    ElMessage.warning('请输入用户名')
+    message.warning('请输入用户名')
     return
   }
   loading.value = true
   try {
     const { data } = await getSecurityQuestion(form.value.username)
+    if (!data.security_question) {
+      message.error('该用户未设置安全问题')
+      return
+    }
     securityQuestion.value = data.security_question
     step.value = 1
   } catch (e) {
-    ElMessage.error(e.response?.data?.error || '用户不存在')
+    message.error(e.response?.data?.error || '用户不存在')
   } finally {
     loading.value = false
   }
@@ -84,10 +93,21 @@ async function checkUsername() {
 
 async function verifyAnswer() {
   if (!form.value.security_answer) {
-    ElMessage.warning('请输入安全答案')
+    message.warning('请输入安全答案')
     return
   }
-  step.value = 2
+  loading.value = true
+  try {
+    await api.post('/auth/verify-answer', {
+      username: form.value.username,
+      security_answer: md5(form.value.security_answer)
+    })
+    step.value = 2
+  } catch (e) {
+    message.error(e.response?.data?.error || '安全答案错误')
+  } finally {
+    loading.value = false
+  }
 }
 
 async function resetPassword() {
@@ -95,17 +115,21 @@ async function resetPassword() {
     message.warning('密码至少6位')
     return
   }
+  if (form.value.new_password !== form.value.confirm_password) {
+    message.warning('两次输入的密码不一致')
+    return
+  }
   loading.value = true
   try {
     await forgotPassword({
       username: form.value.username,
-      security_answer: form.value.security_answer,
+      security_answer: md5(form.value.security_answer),
       new_password: md5(form.value.new_password)
     })
-    message.success('密码重置成功，请登录')
-    router.push('/login')
+    message.success('密码重置成功')
+    window.location.href = '/login'
   } catch (e) {
-    message.error(e.response?.data?.error || '重置失败')
+    message.error(e.response?.data?.error || '密码重置失败')
   } finally {
     loading.value = false
   }
