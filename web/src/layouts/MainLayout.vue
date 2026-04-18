@@ -96,8 +96,7 @@ async function handleLogout() {
   })
   if (!confirmed) return
   auth.logout()
-  message.success('已退出登录')
-  router.push('/login')
+  window.location.href = '/login'
 }
 
 onMounted(() => {
