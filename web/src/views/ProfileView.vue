@@ -225,27 +225,27 @@ async function handleSecurityChange() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 24px 32px;
   background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
 }
 
 .profile-layout {
   display: flex;
   width: 100%;
-  max-width: 900px;
-  min-height: 480px;
+  max-width: 1100px;
+  min-height: 440px;
   background: white;
-  border-radius: 20px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 
 .profile-sidebar {
-  width: 220px;
+  width: 200px;
   flex-shrink: 0;
   background: #fafbfc;
   border-right: 1px solid #f0f0f0;
-  padding: 32px 0;
+  padding: 24px 0;
 }
 
 .sidebar-header {
@@ -309,7 +309,7 @@ async function handleSecurityChange() {
 
 .profile-content {
   flex: 1;
-  padding: 40px;
+  padding: 32px 36px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -415,34 +415,40 @@ async function handleSecurityChange() {
     flex-shrink: 0;
     border-right: none;
     border-bottom: 1px solid #f0f0f0;
-    padding: 20px 0 16px;
+    padding: 12px 0 10px;
   }
 
   .sidebar-header {
-    padding: 0 20px 16px;
+    padding: 0 16px 10px;
   }
 
   .avatar {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+  }
+
+  .sidebar-header h2 {
+    font-size: 15px;
   }
 
   .menu-list {
     display: flex;
-    padding: 0 12px;
-    gap: 8px;
+    padding: 0 10px;
+    gap: 6px;
   }
 
   .menu-item {
     flex: 1;
     justify-content: center;
-    padding: 10px;
+    padding: 8px 6px;
     font-size: 13px;
-    gap: 6px;
+    gap: 4px;
   }
 
   .profile-content {
-    padding: 24px 20px 32px;
+    padding: 16px 16px 24px;
+    display: block;
   }
 
   .tab-panel {
@@ -450,11 +456,19 @@ async function handleSecurityChange() {
   }
 
   .panel-header {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
+  }
+
+  .panel-icon {
+    display: none;
   }
 
   .panel-header h3 {
     font-size: 18px;
+  }
+
+  .form-wrapper {
+    gap: 14px;
   }
 }
 </style>
