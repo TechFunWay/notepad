@@ -30,20 +30,10 @@
                     </el-dropdown-item>
                   </router-link>
                   <template v-if="user?.role === 'admin'">
-                    <el-dropdown-item divided>
-                      <el-icon><Setting /></el-icon>
-                      <span>管理后台</span>
-                    </el-dropdown-item>
                     <router-link to="/admin/users">
-                      <el-dropdown-item>
+                      <el-dropdown-item divided>
                         <el-icon><UserFilled /></el-icon>
                         <span>用户管理</span>
-                      </el-dropdown-item>
-                    </router-link>
-                    <router-link to="/admin/configs">
-                      <el-dropdown-item>
-                        <el-icon><Tools /></el-icon>
-                        <span>系统配置</span>
                       </el-dropdown-item>
                     </router-link>
                   </template>
