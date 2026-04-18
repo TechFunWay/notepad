@@ -207,7 +207,7 @@ async function handleSecurityChange() {
   try {
     await updateSecurityQuestion({
       security_question: securityForm.value.question,
-      security_answer: securityForm.value.answer
+      security_answer: md5(securityForm.value.answer)
     })
     message.success('安全问题修改成功')
     securityForm.value = { question: '', answer: '', confirm_answer: '' }

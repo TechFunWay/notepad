@@ -161,7 +161,7 @@ async function handleRegister() {
       username: form.username,
       password: md5(form.password),
       security_question: form.security_question,
-      security_answer: form.security_answer
+      security_answer: md5(form.security_answer)
     })
     message.success('注册成功')
     router.push('/')
