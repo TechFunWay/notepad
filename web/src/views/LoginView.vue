@@ -108,7 +108,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { message } from '@/utils/message'
 import { Document, User, Lock, ArrowRight, EditPen, Tickets, Monitor } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useConfigStore } from '@/stores/config'
@@ -147,7 +147,7 @@ onMounted(async () => {
 
 async function handleLogin() {
   if (!form.username || !form.password) {
-    ElMessage.warning('请输入用户名和密码')
+    message.warning('请输入用户名和密码')
     return
   }
   loading.value = true
@@ -162,10 +162,10 @@ async function handleLogin() {
     } else {
       localStorage.removeItem('login_remember')
     }
-    ElMessage.success('登录成功')
+    message.success('登录成功')
     router.push('/')
   } catch (e) {
-    ElMessage.error(e.response?.data?.error || '登录失败')
+    message.error(e.response?.data?.error || '登录失败')
   } finally {
     loading.value = false
   }

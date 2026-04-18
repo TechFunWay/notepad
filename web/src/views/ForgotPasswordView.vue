@@ -52,7 +52,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getSecurityQuestion, forgotPassword } from '../api/auth'
-import { ElMessage } from 'element-plus'
+import { message } from '@/utils/message'
 import { md5 } from '@/utils/crypto'
 
 const router = useRouter()
@@ -92,7 +92,7 @@ async function verifyAnswer() {
 
 async function resetPassword() {
   if (!form.value.new_password || form.value.new_password.length < 6) {
-    ElMessage.warning('密码至少6位')
+    message.warning('密码至少6位')
     return
   }
   loading.value = true
@@ -102,10 +102,10 @@ async function resetPassword() {
       security_answer: form.value.security_answer,
       new_password: md5(form.value.new_password)
     })
-    ElMessage.success('密码重置成功，请登录')
+    message.success('密码重置成功，请登录')
     router.push('/login')
   } catch (e) {
-    ElMessage.error(e.response?.data?.error || '重置失败')
+    message.error(e.response?.data?.error || '重置失败')
   } finally {
     loading.value = false
   }

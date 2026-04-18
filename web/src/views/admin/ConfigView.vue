@@ -59,7 +59,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { getConfigs, updateConfig } from '../../api/config'
-import { ElMessage } from 'element-plus'
+import { message } from '@/utils/message'
 
 const configs = ref([])
 const editDialogVisible = ref(false)
@@ -102,11 +102,11 @@ function showEditDialog(config) {
 async function handleEdit() {
   try {
     await updateConfig(editingConfig.value.key, editValue.value)
-    ElMessage.success('配置更新成功')
+    message.success('配置更新成功')
     editDialogVisible.value = false
     loadConfigs()
   } catch (e) {
-    ElMessage.error(e.response?.data?.error || '更新失败')
+    message.error(e.response?.data?.error || '更新失败')
   }
 }
 </script>

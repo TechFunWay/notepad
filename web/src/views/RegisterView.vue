@@ -129,7 +129,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { message } from '@/utils/message'
 import { EditPen, User, Lock, QuestionFilled, Key, ArrowRight, Star, CircleCheck } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { md5 } from '@/utils/crypto'
@@ -148,11 +148,11 @@ const form = reactive({
 
 async function handleRegister() {
   if (!form.username || !form.password || !form.password_confirm) {
-    ElMessage.warning('请填写必要信息')
+    message.warning('请填写必要信息')
     return
   }
   if (form.password !== form.password_confirm) {
-    ElMessage.warning('两次输入的密码不一致')
+    message.warning('两次输入的密码不一致')
     return
   }
   loading.value = true
@@ -163,10 +163,10 @@ async function handleRegister() {
       security_question: form.security_question,
       security_answer: form.security_answer
     })
-    ElMessage.success('注册成功')
+    message.success('注册成功')
     router.push('/')
   } catch (e) {
-    ElMessage.error(e.response?.data?.error || '注册失败')
+    message.error(e.response?.data?.error || '注册失败')
   } finally {
     loading.value = false
   }
