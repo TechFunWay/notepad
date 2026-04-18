@@ -133,7 +133,7 @@ func VerifySecurityAnswer(c *gin.Context) {
 		return
 	}
 	if !valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "安全答案错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "安全答案错误"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "验证成功"})
@@ -157,7 +157,7 @@ func VerifyAnswer(c *gin.Context) {
 		return
 	}
 	if !valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "安全答案错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "安全答案错误"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "验证成功"})
@@ -177,7 +177,7 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 	if !valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "安全答案错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "安全答案错误"})
 		return
 	}
 
