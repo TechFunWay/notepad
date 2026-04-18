@@ -159,11 +159,6 @@
       <div v-else class="editor-empty">
         <div class="dashboard-container">
           <div class="dashboard-header">
-            <div class="empty-animation">
-              <div class="empty-icon-large">
-                <el-icon :size="isMobile ? 80 : 96"><EditPen /></el-icon>
-              </div>
-            </div>
             <h2>欢迎回来</h2>
             <p>开始记录您的灵感与想法</p>
           </div>
@@ -777,16 +772,8 @@ function formatFullDate(dateStr) {
   flex-direction: column;
   color: #6b7280;
   text-align: center;
-  padding: 16px;
-}
-
-.empty-animation {
-  margin-bottom: 16px;
-}
-
-.empty-icon-large {
-  color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  opacity: 0.6;
+  padding: 8px 16px;
+  overflow-y: auto;
 }
 
 .editor-empty h2 {
@@ -812,14 +799,14 @@ function formatFullDate(dateStr) {
 /* 仪表板样式 */
 .dashboard-container {
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 4px 0;
+  padding: 8px 24px;
 }
 
 .dashboard-header {
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 24px;
 }
 
 .dashboard-header h2 {
