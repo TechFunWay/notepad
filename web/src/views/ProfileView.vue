@@ -37,7 +37,7 @@
               <p>修改您的登录密码</p>
             </div>
           </div>
-          <el-form :model="passwordForm" class="form-wrapper">
+          <el-form :model="passwordForm" class="form-wrapper" @submit.prevent>
             <div class="form-group">
               <label class="group-label">当前密码</label>
               <div class="input-box">
@@ -47,6 +47,7 @@
                   type="password" 
                   placeholder="请输入当前密码"
                   show-password
+                  @keyup.enter="focusNewPassword"
                 />
               </div>
             </div>
@@ -59,6 +60,7 @@
                   type="password" 
                   placeholder="请输入新密码（至少6位）"
                   show-password
+                  @keyup.enter="focusConfirmPassword"
                 />
               </div>
             </div>
@@ -71,6 +73,7 @@
                   type="password" 
                   placeholder="请再次输入新密码"
                   show-password
+                  @keyup.enter="handlePasswordChange"
                 />
               </div>
             </div>
@@ -93,7 +96,7 @@
               <p>设置用于找回密码的安全问题和答案</p>
             </div>
           </div>
-          <el-form :model="securityForm" class="form-wrapper">
+          <el-form :model="securityForm" class="form-wrapper" @submit.prevent>
             <div class="form-group">
               <label class="group-label">安全问题</label>
               <div class="input-box">
@@ -101,6 +104,7 @@
                 <el-input 
                   v-model="securityForm.question" 
                   placeholder="例如：您第一所学校的名称？"
+                  @keyup.enter="focusAnswer"
                 />
               </div>
             </div>
@@ -113,6 +117,7 @@
                   type="password" 
                   placeholder="请输入安全答案"
                   show-password
+                  @keyup.enter="focusConfirmAnswer"
                 />
               </div>
             </div>
@@ -125,6 +130,7 @@
                   type="password" 
                   placeholder="请再次输入安全答案"
                   show-password
+                  @keyup.enter="handleSecurityChange"
                 />
               </div>
             </div>
@@ -144,7 +150,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { changePassword, updateSecurityQuestion } from '../api/auth'
 import { message } from '@/utils/message'
 import { Lock, Key, QuestionFilled, UserFilled } from '@element-plus/icons-vue'
@@ -165,6 +171,42 @@ const securityForm = ref({
   answer: '',
   confirm_answer: ''
 })
+
+async function focusNewPassword() {
+  await nextTick()
+  const inputs = document.querySelectorAll('.input-box')
+  if (inputs[1]) {
+    const input = inputs[1].querySelector('input')
+    input?.focus()
+  }
+}
+
+async function focusConfirmPassword() {
+  await nextTick()
+  const inputs = document.querySelectorAll('.input-box')
+  if (inputs[2]) {
+    const input = inputs[2].querySelector('input')
+    input?.focus()
+  }
+}
+
+async function focusAnswer() {
+  await nextTick()
+  const inputs = document.querySelectorAll('.input-box')
+  if (inputs[1]) {
+    const input = inputs[1].querySelector('input')
+    input?.focus()
+  }
+}
+
+async function focusConfirmAnswer() {
+  await nextTick()
+  const inputs = document.querySelectorAll('.input-box')
+  if (inputs[2]) {
+    const input = inputs[2].querySelector('input')
+    input?.focus()
+  }
+}
 
 async function handlePasswordChange() {
   if (!passwordForm.value.current_password || !passwordForm.value.new_password || !passwordForm.value.confirm_password) {

@@ -38,7 +38,7 @@
             <h2>开始注册</h2>
             <p>只需几步即可完成注册</p>
           </div>
-          <el-form :model="form" class="register-form" label-width="0">
+          <el-form :model="form" class="register-form" label-width="0" @submit.prevent>
             <el-form-item>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><User /></el-icon>
@@ -47,6 +47,7 @@
                   placeholder="请输入用户名" 
                   size="large"
                   class="custom-input"
+                  @keyup.enter="focusPassword"
                 />
               </div>
             </el-form-item>
@@ -60,6 +61,7 @@
                   size="large"
                   show-password
                   class="custom-input"
+                  @keyup.enter="focusConfirmPassword"
                 />
               </div>
             </el-form-item>
@@ -73,6 +75,7 @@
                   size="large"
                   show-password
                   class="custom-input"
+                  @keyup.enter="focusSecurityQuestion"
                 />
               </div>
             </el-form-item>
@@ -84,6 +87,7 @@
                   placeholder="安全问题（用于找回密码）" 
                   size="large"
                   class="custom-input"
+                  @keyup.enter="focusSecurityAnswer"
                 />
               </div>
             </el-form-item>
@@ -127,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from '@/utils/message'
 import { EditPen, User, Lock, QuestionFilled, Key, ArrowRight, Star, CircleCheck } from '@element-plus/icons-vue'
@@ -145,6 +149,42 @@ const form = reactive({
   security_question: '',
   security_answer: ''
 })
+
+async function focusPassword() {
+  await nextTick()
+  const inputs = document.querySelectorAll('.custom-input')
+  if (inputs[1]) {
+    const input = inputs[1].querySelector('input')
+    input?.focus()
+  }
+}
+
+async function focusConfirmPassword() {
+  await nextTick()
+  const inputs = document.querySelectorAll('.custom-input')
+  if (inputs[2]) {
+    const input = inputs[2].querySelector('input')
+    input?.focus()
+  }
+}
+
+async function focusSecurityQuestion() {
+  await nextTick()
+  const inputs = document.querySelectorAll('.custom-input')
+  if (inputs[3]) {
+    const input = inputs[3].querySelector('input')
+    input?.focus()
+  }
+}
+
+async function focusSecurityAnswer() {
+  await nextTick()
+  const inputs = document.querySelectorAll('.custom-input')
+  if (inputs[4]) {
+    const input = inputs[4].querySelector('input')
+    input?.focus()
+  }
+}
 
 async function handleRegister() {
   if (!form.username || !form.password || !form.password_confirm) {
