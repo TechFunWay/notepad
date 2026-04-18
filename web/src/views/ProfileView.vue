@@ -1,144 +1,143 @@
 <template>
   <div class="profile-container">
-    <div class="profile-wrapper">
-      <div class="profile-header">
-        <div class="header-icon">
-          <el-icon :size="48"><Lock /></el-icon>
+    <div class="profile-layout">
+      <div class="profile-sidebar">
+        <div class="sidebar-header">
+          <div class="avatar">
+            <el-icon :size="32"><UserFilled /></el-icon>
+          </div>
+          <h2>个人设置</h2>
         </div>
-        <h1>个人设置</h1>
-        <p>管理您的账号安全</p>
+        <div class="menu-list">
+          <div 
+            class="menu-item" 
+            :class="{ active: activeTab === 'password' }"
+            @click="activeTab = 'password'"
+          >
+            <el-icon><Key /></el-icon>
+            <span>密码修改</span>
+          </div>
+          <div 
+            class="menu-item" 
+            :class="{ active: activeTab === 'security' }"
+            @click="activeTab = 'security'"
+          >
+            <el-icon><QuestionFilled /></el-icon>
+            <span>安全问题</span>
+          </div>
+        </div>
       </div>
 
-      <div class="profile-card">
-        <div class="card-title">
-          <el-icon><Key /></el-icon>
-          <span>修改密码</span>
-        </div>
-        <el-form :model="form" class="profile-form">
-          <el-form-item>
-            <div class="form-item-wrapper">
-              <div class="form-label">当前密码</div>
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Lock /></el-icon>
+      <div class="profile-content">
+        <div v-if="activeTab === 'password'" class="tab-panel">
+          <div class="panel-header">
+            <el-icon :size="40" class="panel-icon"><Key /></el-icon>
+            <div>
+              <h3>密码修改</h3>
+              <p>修改您的登录密码</p>
+            </div>
+          </div>
+          <el-form :model="passwordForm" class="form-wrapper">
+            <div class="form-group">
+              <label class="group-label">当前密码</label>
+              <div class="input-box">
+                <el-icon class="input-box-icon"><Lock /></el-icon>
                 <el-input 
-                  v-model="form.current_password" 
+                  v-model="passwordForm.current_password" 
                   type="password" 
                   placeholder="请输入当前密码"
-                  show-password 
-                  class="custom-input"
-                  size="large"
+                  show-password
                 />
               </div>
             </div>
-          </el-form-item>
-          <el-form-item>
-            <div class="form-item-wrapper">
-              <div class="form-label">新密码</div>
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Lock /></el-icon>
+            <div class="form-group">
+              <label class="group-label">新密码</label>
+              <div class="input-box">
+                <el-icon class="input-box-icon"><Lock /></el-icon>
                 <el-input 
-                  v-model="form.new_password" 
+                  v-model="passwordForm.new_password" 
                   type="password" 
                   placeholder="请输入新密码（至少6位）"
-                  show-password 
-                  class="custom-input"
-                  size="large"
+                  show-password
                 />
               </div>
             </div>
-          </el-form-item>
-          <el-form-item>
-            <div class="form-item-wrapper">
-              <div class="form-label">确认密码</div>
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Lock /></el-icon>
+            <div class="form-group">
+              <label class="group-label">确认密码</label>
+              <div class="input-box">
+                <el-icon class="input-box-icon"><Lock /></el-icon>
                 <el-input 
-                  v-model="form.confirm_password" 
+                  v-model="passwordForm.confirm_password" 
                   type="password" 
                   placeholder="请再次输入新密码"
-                  show-password 
-                  class="custom-input"
-                  size="large"
+                  show-password
                 />
               </div>
             </div>
-          </el-form-item>
-          <el-form-item>
             <el-button 
               type="primary" 
               class="submit-btn"
-              :loading="loading" 
+              :loading="passwordLoading" 
               @click="handlePasswordChange"
             >
-              <span>确认修改</span>
-              <el-icon><Check /></el-icon>
+              确认修改
             </el-button>
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <div class="profile-card">
-        <div class="card-title">
-          <el-icon><QuestionFilled /></el-icon>
-          <span>安全问题</span>
+          </el-form>
         </div>
-        <el-form :model="securityForm" class="profile-form">
-          <el-form-item>
-            <div class="form-item-wrapper">
-              <div class="form-label">安全问题</div>
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><QuestionFilled /></el-icon>
+
+        <div v-else class="tab-panel">
+          <div class="panel-header">
+            <el-icon :size="40" class="panel-icon"><QuestionFilled /></el-icon>
+            <div>
+              <h3>安全问题</h3>
+              <p>设置用于找回密码的安全问题和答案</p>
+            </div>
+          </div>
+          <el-form :model="securityForm" class="form-wrapper">
+            <div class="form-group">
+              <label class="group-label">安全问题</label>
+              <div class="input-box">
+                <el-icon class="input-box-icon"><QuestionFilled /></el-icon>
                 <el-input 
                   v-model="securityForm.question" 
-                  placeholder="请输入安全问题（用于找回密码）"
-                  class="custom-input"
-                  size="large"
+                  placeholder="例如：您第一所学校的名称？"
                 />
               </div>
             </div>
-          </el-form-item>
-          <el-form-item>
-            <div class="form-item-wrapper">
-              <div class="form-label">安全答案</div>
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Key /></el-icon>
+            <div class="form-group">
+              <label class="group-label">安全答案</label>
+              <div class="input-box">
+                <el-icon class="input-box-icon"><Key /></el-icon>
                 <el-input 
                   v-model="securityForm.answer" 
+                  type="password" 
                   placeholder="请输入安全答案"
-                  show-password 
-                  class="custom-input"
-                  size="large"
+                  show-password
                 />
               </div>
             </div>
-          </el-form-item>
-          <el-form-item>
-            <div class="form-item-wrapper">
-              <div class="form-label">确认答案</div>
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Key /></el-icon>
+            <div class="form-group">
+              <label class="group-label">确认答案</label>
+              <div class="input-box">
+                <el-icon class="input-box-icon"><Key /></el-icon>
                 <el-input 
                   v-model="securityForm.confirm_answer" 
+                  type="password" 
                   placeholder="请再次输入安全答案"
-                  show-password 
-                  class="custom-input"
-                  size="large"
+                  show-password
                 />
               </div>
             </div>
-          </el-form-item>
-          <el-form-item>
             <el-button 
               type="primary" 
               class="submit-btn"
               :loading="securityLoading" 
               @click="handleSecurityChange"
             >
-              <span>确认修改</span>
-              <el-icon><Check /></el-icon>
+              确认修改
             </el-button>
-          </el-form-item>
-        </el-form>
+          </el-form>
+        </div>
       </div>
     </div>
   </div>
@@ -148,11 +147,13 @@
 import { ref } from 'vue'
 import { changePassword, updateSecurityQuestion } from '../api/auth'
 import { message } from '@/utils/message'
-import { Lock, Key, Check, QuestionFilled } from '@element-plus/icons-vue'
+import { Lock, Key, QuestionFilled, UserFilled } from '@element-plus/icons-vue'
 import { md5 } from '@/utils/crypto'
 
-const loading = ref(false)
-const form = ref({
+const activeTab = ref('password')
+
+const passwordLoading = ref(false)
+const passwordForm = ref({
   current_password: '',
   new_password: '',
   confirm_password: ''
@@ -166,30 +167,30 @@ const securityForm = ref({
 })
 
 async function handlePasswordChange() {
-  if (!form.value.current_password || !form.value.new_password || !form.value.confirm_password) {
+  if (!passwordForm.value.current_password || !passwordForm.value.new_password || !passwordForm.value.confirm_password) {
     message.warning('请填写完整密码信息')
     return
   }
-  if (form.value.new_password !== form.value.confirm_password) {
+  if (passwordForm.value.new_password !== passwordForm.value.confirm_password) {
     message.warning('新密码与确认密码不一致')
     return
   }
-  if (form.value.new_password.length < 6) {
+  if (passwordForm.value.new_password.length < 6) {
     message.warning('新密码至少6位')
     return
   }
-  loading.value = true
+  passwordLoading.value = true
   try {
     await changePassword({
-      current_password: md5(form.value.current_password),
-      new_password: md5(form.value.new_password)
+      current_password: md5(passwordForm.value.current_password),
+      new_password: md5(passwordForm.value.new_password)
     })
     message.success('密码修改成功')
-    form.value = { current_password: '', new_password: '', confirm_password: '' }
+    passwordForm.value = { current_password: '', new_password: '', confirm_password: '' }
   } catch (e) {
     message.error(e.response?.data?.error || '密码修改失败')
   } finally {
-    loading.value = false
+    passwordLoading.value = false
   }
 }
 
@@ -224,168 +225,236 @@ async function handleSecurityChange() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 40px 20px;
   background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
 }
 
-.profile-wrapper {
+.profile-layout {
+  display: flex;
   width: 100%;
-  max-width: 520px;
-  transform: translateY(-10px);
+  max-width: 900px;
+  min-height: 480px;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
 }
 
-.profile-header {
+.profile-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #fafbfc;
+  border-right: 1px solid #f0f0f0;
+  padding: 32px 0;
+}
+
+.sidebar-header {
   text-align: center;
-  margin-bottom: 28px;
+  padding: 0 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.header-icon {
-  width: 64px;
-  height: 64px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.avatar {
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  margin: 0 auto 16px;
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
+  margin: 0 auto 12px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
 }
 
-.profile-header h1 {
-  font-size: 24px;
+.sidebar-header h2 {
+  font-size: 16px;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 6px;
-  letter-spacing: -0.5px;
-}
-
-.profile-header p {
-  font-size: 14px;
-  color: #6b7280;
   margin: 0;
 }
 
-.profile-card {
-  background: white;
-  border-radius: 24px;
-  padding: 36px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+.menu-list {
+  padding: 16px 12px;
 }
 
-.profile-card:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-}
-
-.card-title {
+.menu-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 28px;
-}
-
-.card-title .el-icon {
-  color: #667eea;
-}
-
-.profile-form {
-  margin-bottom: 0;
-}
-
-.form-item-wrapper {
-  width: 100%;
-}
-
-.form-label {
+  padding: 12px 16px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.menu-item:hover {
+  background: #f3f4f6;
   color: #374151;
-  margin-bottom: 8px;
 }
 
-.input-wrapper {
-  position: relative;
+.menu-item.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
-.input-icon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
+.menu-item .el-icon {
+  font-size: 18px;
+}
+
+.profile-content {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.tab-panel {
+  max-width: 440px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.panel-icon {
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.panel-header h3 {
   font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 4px;
+}
+
+.panel-header p {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-box-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 18px;
+  color: #9ca3af;
   z-index: 1;
 }
 
-.custom-input :deep(.el-input__wrapper) {
-  padding-left: 48px !important;
-  border-radius: 12px;
+.input-box :deep(.el-input__wrapper) {
+  padding-left: 42px !important;
+  border-radius: 10px;
   box-shadow: 0 0 0 1px #e5e7eb;
-  transition: all 0.3s;
 }
 
-.custom-input :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px #667eea;
-}
-
-.custom-input :deep(.el-input__wrapper.is-focus) {
+.input-box :deep(.el-input__wrapper.is-focus) {
   box-shadow: 0 0 0 2px #667eea;
 }
 
 .submit-btn {
-  width: 100%;
-  height: 48px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 12px;
+  height: 44px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  transition: all 0.3s;
   margin-top: 8px;
-}
-
-.submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.submit-btn:active {
-  transform: translateY(0);
 }
 
 @media (max-width: 768px) {
   .profile-container {
+    padding: 0;
+  }
+
+  .profile-layout {
+    flex-direction: column;
+    border-radius: 0;
     min-height: calc(100vh - 56px);
-    padding: 24px 16px;
-    align-items: flex-start;
+    max-width: 100%;
   }
 
-  .header-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
+  .profile-sidebar {
+    width: 100%;
+    flex-shrink: 0;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 20px 0 16px;
   }
 
-  .header-icon .el-icon {
-    font-size: 32px;
+  .sidebar-header {
+    padding: 0 20px 16px;
   }
 
-  .profile-header h1 {
-    font-size: 24px;
+  .avatar {
+    width: 48px;
+    height: 48px;
   }
 
-  .profile-card {
-    padding: 28px 20px;
-    border-radius: 16px;
+  .menu-list {
+    display: flex;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .menu-item {
+    flex: 1;
+    justify-content: center;
+    padding: 10px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  .profile-content {
+    padding: 24px 20px 32px;
+  }
+
+  .tab-panel {
+    max-width: none;
+  }
+
+  .panel-header {
+    margin-bottom: 24px;
+  }
+
+  .panel-header h3 {
+    font-size: 18px;
   }
 }
 </style>
