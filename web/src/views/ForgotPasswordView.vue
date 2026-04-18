@@ -10,31 +10,31 @@
         <el-step title="重置密码" />
       </el-steps>
 
-      <el-form v-if="step === 0" :model="form">
+      <el-form v-if="step === 0" :model="form" @submit.prevent>
         <el-form-item>
-          <el-input v-model="form.username" placeholder="请输入用户名" prefix-icon="User" size="large" @keyup.enter="checkUsername" />
+          <el-input ref="usernameInput" v-model="form.username" placeholder="请输入用户名" prefix-icon="User" size="large" @keyup.enter="checkUsername" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="loading" @click="checkUsername" size="large" style="width: 100%">下一步</el-button>
+          <el-button type="primary" :loading="loading" @click="checkUsername" @keyup.enter="checkUsername" size="large" style="width: 100%">下一步</el-button>
         </el-form-item>
       </el-form>
 
-      <el-form v-else-if="step === 1" :model="form">
+      <el-form v-else-if="step === 1" :model="form" @submit.prevent>
         <div class="security-question-display">
           <el-icon><QuestionFilled /></el-icon>
           <span>{{ securityQuestion }}</span>
         </div>
         <el-form-item>
-          <el-input v-model="form.security_answer" placeholder="请输入安全答案" size="large" @keyup.enter="verifyAnswer" />
+          <el-input ref="answerInput" v-model="form.security_answer" placeholder="请输入安全答案" size="large" @keyup.enter="verifyAnswer" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" @click="verifyAnswer" size="large" style="width: 100%">下一步</el-button>
         </el-form-item>
       </el-form>
 
-      <el-form v-else :model="form">
+      <el-form v-else :model="form" @submit.prevent>
         <el-form-item>
-          <el-input v-model="form.new_password" type="password" placeholder="新密码（至少6位）" prefix-icon="Lock" size="large" show-password @keyup.enter="resetPassword" />
+          <el-input ref="passwordInput" v-model="form.new_password" type="password" placeholder="新密码（至少6位）" prefix-icon="Lock" size="large" show-password @keyup.enter="handlePasswordEnter" />
         </el-form-item>
         <el-form-item>
           <el-input v-model="form.confirm_password" type="password" placeholder="请再次输入新密码" prefix-icon="Lock" size="large" show-password @keyup.enter="resetPassword" />
@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { getSecurityQuestion, forgotPassword } from '../api/auth'
 import api from '../api/request'
@@ -63,6 +63,9 @@ const router = useRouter()
 const loading = ref(false)
 const step = ref(0)
 const securityQuestion = ref('')
+const usernameInput = ref(null)
+const answerInput = ref(null)
+const passwordInput = ref(null)
 const form = ref({
   username: '',
   security_answer: '',
@@ -84,6 +87,9 @@ async function checkUsername() {
     }
     securityQuestion.value = data.security_question
     step.value = 1
+    await nextTick()
+    form.value.security_answer = ''
+    answerInput.value?.focus()
   } catch (e) {
     message.error(e.response?.data?.error || '用户不存在')
   } finally {
@@ -103,11 +109,23 @@ async function verifyAnswer() {
       security_answer: md5(form.value.security_answer)
     })
     step.value = 2
+    await nextTick()
+    form.value.new_password = ''
+    form.value.confirm_password = ''
+    passwordInput.value?.focus()
   } catch (e) {
     message.error(e.response?.data?.error || '安全答案错误')
   } finally {
     loading.value = false
   }
+}
+
+function handlePasswordEnter() {
+  if (!form.value.new_password || form.value.new_password.length < 6) {
+    message.warning('密码至少6位')
+    return
+  }
+  document.querySelector('input[placeholder="请再次输入新密码"]')?.focus()
 }
 
 async function resetPassword() {
