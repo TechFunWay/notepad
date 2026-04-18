@@ -4,7 +4,7 @@
       <el-header class="header">
         <div class="header-inner">
           <div class="header-left">
-            <router-link to="/" class="logo">
+            <router-link to="/notes-list" class="logo">
               <div class="logo-icon">
                 <el-icon><Document /></el-icon>
               </div>

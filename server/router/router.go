@@ -36,6 +36,7 @@ func Setup(uploadDir string, webDir string) *gin.Engine {
 		auth := api.Group("", middleware.RequireAuth())
 		auth.POST("/auth/logout", handler.Logout)
 		auth.POST("/auth/change-password", handler.ChangePassword)
+		auth.PUT("/auth/security-question", handler.UpdateSecurityQuestion)
 		auth.POST("/upload", handler.Upload)
 		auth.GET("/notes", handler.ListNotes)
 		auth.POST("/notes", handler.CreateNote)

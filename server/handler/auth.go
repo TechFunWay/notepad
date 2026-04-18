@@ -26,6 +26,11 @@ type changePasswordRequest struct {
 	NewPassword     string `json:"new_password" binding:"required,min=6"`
 }
 
+type updateSecurityQuestionRequest struct {
+	SecurityQuestion string `json:"security_question"`
+	SecurityAnswer   string `json:"security_answer"`
+}
+
 type forgotPasswordRequest struct {
 	Username       string `json:"username" binding:"required"`
 	SecurityAnswer string `json:"security_answer" binding:"required"`
@@ -161,4 +166,23 @@ func ChangePassword(c *gin.Context) {
 	_ = userID // used for auth check
 	logger.Audit("Password changed: %s", username)
 	c.JSON(http.StatusOK, gin.H{"message": "密码修改成功"})
+}
+
+func UpdateSecurityQuestion(c *gin.Context) {
+	var req updateSecurityQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		return
+	}
+
+	userID, _ := c.Get("userID")
+	username, _ := c.Get("username")
+
+	if err := model.UpdateSecurityQuestion(userID.(int64), req.SecurityQuestion, req.SecurityAnswer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "安全问题修改失败"})
+		return
+	}
+
+	logger.Audit("Security question updated: %s", username)
+	c.JSON(http.StatusOK, gin.H{"message": "安全问题修改成功"})
 }
