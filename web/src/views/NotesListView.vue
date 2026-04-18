@@ -247,9 +247,7 @@ function formatDate(dateStr) {
 
 <style scoped>
 .notes-list-container {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 24px 32px;
 }
 
 .notes-list-header {

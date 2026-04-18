@@ -427,7 +427,7 @@ function formatFullDate(dateStr) {
 }
 
 .sidebar-header {
-  padding: 20px;
+  padding: 12px;
 }
 
 .create-btn {
@@ -447,7 +447,7 @@ function formatFullDate(dateStr) {
 }
 
 .sidebar-search {
-  padding: 0 20px 16px;
+  padding: 0 12px 12px;
 }
 
 .search-box {
@@ -536,7 +536,7 @@ function formatFullDate(dateStr) {
 .note-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0 12px 12px;
+  padding: 0 4px 12px;
 }
 
 .note-item {
@@ -799,9 +799,7 @@ function formatFullDate(dateStr) {
 /* 仪表板样式 */
 .dashboard-container {
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 8px 24px;
+  padding: 8px 16px;
 }
 
 .dashboard-header {
