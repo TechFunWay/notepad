@@ -68,7 +68,71 @@
               type="primary" 
               class="submit-btn"
               :loading="loading" 
-              @click="handleChange"
+              @click="handlePasswordChange"
+            >
+              <span>确认修改</span>
+              <el-icon><Check /></el-icon>
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <div class="profile-card">
+        <div class="card-title">
+          <el-icon><QuestionFilled /></el-icon>
+          <span>安全问题</span>
+        </div>
+        <el-form :model="securityForm" class="profile-form">
+          <el-form-item>
+            <div class="form-item-wrapper">
+              <div class="form-label">安全问题</div>
+              <div class="input-wrapper">
+                <el-icon class="input-icon"><QuestionFilled /></el-icon>
+                <el-input 
+                  v-model="securityForm.question" 
+                  placeholder="请输入安全问题（用于找回密码）"
+                  class="custom-input"
+                  size="large"
+                />
+              </div>
+            </div>
+          </el-form-item>
+          <el-form-item>
+            <div class="form-item-wrapper">
+              <div class="form-label">安全答案</div>
+              <div class="input-wrapper">
+                <el-icon class="input-icon"><Key /></el-icon>
+                <el-input 
+                  v-model="securityForm.answer" 
+                  placeholder="请输入安全答案"
+                  show-password 
+                  class="custom-input"
+                  size="large"
+                />
+              </div>
+            </div>
+          </el-form-item>
+          <el-form-item>
+            <div class="form-item-wrapper">
+              <div class="form-label">确认答案</div>
+              <div class="input-wrapper">
+                <el-icon class="input-icon"><Key /></el-icon>
+                <el-input 
+                  v-model="securityForm.confirm_answer" 
+                  placeholder="请再次输入安全答案"
+                  show-password 
+                  class="custom-input"
+                  size="large"
+                />
+              </div>
+            </div>
+          </el-form-item>
+          <el-form-item>
+            <el-button 
+              type="primary" 
+              class="submit-btn"
+              :loading="securityLoading" 
+              @click="handleSecurityChange"
             >
               <span>确认修改</span>
               <el-icon><Check /></el-icon>
@@ -82,9 +146,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { changePassword } from '../api/auth'
+import { changePassword, updateSecurityQuestion } from '../api/auth'
 import { message } from '@/utils/message'
-import { Lock, Key, Check } from '@element-plus/icons-vue'
+import { Lock, Key, Check, QuestionFilled } from '@element-plus/icons-vue'
 import { md5 } from '@/utils/crypto'
 
 const loading = ref(false)
@@ -94,7 +158,14 @@ const form = ref({
   confirm_password: ''
 })
 
-async function handleChangePassword() {
+const securityLoading = ref(false)
+const securityForm = ref({
+  question: '',
+  answer: '',
+  confirm_answer: ''
+})
+
+async function handlePasswordChange() {
   if (!form.value.current_password || !form.value.new_password || !form.value.confirm_password) {
     message.warning('请填写完整密码信息')
     return
@@ -119,6 +190,30 @@ async function handleChangePassword() {
     message.error(e.response?.data?.error || '密码修改失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function handleSecurityChange() {
+  if (!securityForm.value.question || !securityForm.value.answer || !securityForm.value.confirm_answer) {
+    message.warning('请填写完整安全问题信息')
+    return
+  }
+  if (securityForm.value.answer !== securityForm.value.confirm_answer) {
+    message.warning('两次输入的安全答案不一致')
+    return
+  }
+  securityLoading.value = true
+  try {
+    await updateSecurityQuestion({
+      security_question: securityForm.value.question,
+      security_answer: securityForm.value.answer
+    })
+    message.success('安全问题修改成功')
+    securityForm.value = { question: '', answer: '', confirm_answer: '' }
+  } catch (e) {
+    message.error(e.response?.data?.error || '安全问题修改失败')
+  } finally {
+    securityLoading.value = false
   }
 }
 </script>

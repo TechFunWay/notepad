@@ -163,6 +163,20 @@ func VerifySecurityAnswer(username, answer string) (bool, error) {
 	return err == nil, nil
 }
 
+func UpdateSecurityQuestion(id int64, question, answer string) error {
+	var answerHash string
+	if answer != "" {
+		normalized := strings.ToLower(strings.TrimSpace(answer))
+		hash, err := bcrypt.GenerateFromPassword([]byte(normalized), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		answerHash = string(hash)
+	}
+	_, err := database.DB.Exec("UPDATE users SET security_question = ?, security_answer_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", question, answerHash, id)
+	return err
+}
+
 func GetAdminUser() (*User, error) {
 	user := &User{}
 	err := database.DB.QueryRow(

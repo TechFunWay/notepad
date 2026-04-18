@@ -85,6 +85,16 @@
         </div>
 
         <div class="editor-header">
+          <el-button
+            v-if="!isMobile"
+            type="primary"
+            class="back-to-list-btn"
+            :icon="Tickets"
+            text
+            @click="backToList"
+          >
+            <span>笔记列表</span>
+          </el-button>
           <el-input
             v-model="currentNote.title"
             placeholder="笔记标题"
@@ -669,8 +679,22 @@ function formatFullDate(dateStr) {
 }
 
 .editor-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   padding: 24px 32px 8px;
   flex-shrink: 0;
+}
+
+.back-to-list-btn {
+  flex-shrink: 0;
+  color: #667eea;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.back-to-list-btn:hover {
+  color: #764ba2;
 }
 
 .title-input :deep(.el-input__wrapper) {

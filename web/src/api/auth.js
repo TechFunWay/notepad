@@ -11,3 +11,7 @@ export function forgotPassword(data) {
 export function changePassword(data) {
   return api.post('/auth/change-password', data)
 }
+
+export function updateSecurityQuestion(data) {
+  return api.put('/auth/security-question', data)
+}
