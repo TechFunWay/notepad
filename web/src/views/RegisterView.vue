@@ -405,6 +405,11 @@ async function handleRegister() {
 
 .input-wrapper {
   position: relative;
+  width: 100%;
+}
+
+.custom-input {
+  width: 100%;
 }
 
 .input-icon {
