@@ -26,7 +26,7 @@ build_fnpack() {
     LABEL=$3
     echo -n "  📦 ${LABEL}.fpk... "
     
-    DIR="${RELEASE_DIR}/.fnpack-${ARCH}"
+    DIR="${RELEASE_DIR}/fnpack-${ARCH}"
     rm -rf "${DIR}"
     mkdir -p "${DIR}"
     
@@ -35,26 +35,8 @@ build_fnpack() {
     cp -r fnpack/* "${DIR}/"
     sed -i '' "s/^platform.*/platform              = ${PLATFORM}/" "${DIR}/manifest"
     
-    mkdir -p "${DIR}/app/server" "${DIR}/app/ui/images"
     cp "${RELEASE_DIR}/${APP_NAME}-${VERSION}-linux-${ARCH}/notepad" "${DIR}/app/server/"
-    cp -r "${RELEASE_DIR}/${APP_NAME}-${VERSION}-linux-${ARCH}/www/"* "${DIR}/app/ui/"
-    
-    # Create ui config
-    cat > "${DIR}/app/ui/config" << 'EOCONFIG'
-{
-    ".url": {
-        "techfunway-notepad.Application": {
-            "title": "记事本",
-            "icon": "images/icon_{0}.png",
-            "type": "url",
-            "protocol": "http",
-            "port": "${wizard_app_port}",
-            "url": "/",
-            "allUsers": false
-        }
-    }
-}
-EOCONFIG
+    cp -r "${RELEASE_DIR}/${APP_NAME}-${VERSION}-linux-${ARCH}/www/"* "${DIR}/app/www/"
     
     # 删除 .DS_Store
     find "${DIR}" -name ".DS_Store" -delete 2>/dev/null || true

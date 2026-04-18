@@ -5,7 +5,7 @@ LDFLAGS := -s -w -X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X m
 DOCKER_REPO := wycto/notepad
 OUTPUT_DIR := release/$(VERSION)
 
-.PHONY: all clean web server build cross-compile docker fpk all-build dev-server dev-web dev
+.PHONY: all clean web server build cross-compile docker build-fpk dev-server dev-web dev
 
 all: clean build
 
@@ -41,14 +41,6 @@ docker:
 	@echo "==> Building Docker image..."
 	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_REPO):$(VERSION) -t $(DOCKER_REPO):latest --load .
 	@echo "==> Docker image built: $(DOCKER_REPO):$(VERSION)"
-
-fpk:
-	@echo "==> Building FPK package..."
-	./deploy/scripts/pack-fpk.sh
-	@echo "==> FPK package complete"
-
-all-build: cross-compile fpk
-	@echo "==> Full build complete"
 
 clean:
 	rm -rf $(OUTPUT_DIR) server/static/dist web/dist
