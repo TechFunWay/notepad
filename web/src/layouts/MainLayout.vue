@@ -67,7 +67,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { message } from '@/utils/message'
 import { Document, User, SwitchButton, Setting, UserFilled, Tools, ArrowDown } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api/request'
@@ -88,17 +88,16 @@ async function fetchVersion() {
 }
 
 async function handleLogout() {
-  try {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    auth.logout()
-    ElMessage.success('已退出登录')
-    router.push('/login')
-  } catch {
-  }
+  const confirmed = await message.confirm('确定要退出登录吗？', {
+    title: '提示',
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+  if (!confirmed) return
+  auth.logout()
+  message.success('已退出登录')
+  router.push('/login')
 }
 
 onMounted(() => {
