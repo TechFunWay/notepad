@@ -84,12 +84,12 @@ docker compose up -d
 # 前置要求: Go 1.22+, Node.js 20+
 
 # 完整构建（前端+后端+FPK）
-./deploy/scripts/build.sh
+make build-fpk
 
 # 或使用 Makefile
 make build          # 当前平台
 make cross-compile  # 多平台交叉编译
-make fpk            # 飞牛 FPK 包
+make build-fpk      # 飞牛 FPK 包
 ```
 
 构建产物输出到 `release/<version>/` 目录。
@@ -115,10 +115,11 @@ make fpk            # 飞牛 FPK 包
 │       ├── stores/      # Pinia 状态
 │       ├── api/         # API 调用
 │       └── router/      # 前端路由
-├── deploy/
-│   ├── fpk/             # 飞牛 FPK 包
-│   ├── icons/           # 应用图标
-│   └── scripts/         # 构建脚本
+├── scripts/             # 构建脚本
+│   ├── build-all.sh     # 多平台编译
+│   ├── build-fnpack.sh  # 飞牛 FPK 打包
+│   └── build-docker.sh  # Docker 镜像
+├── fnpack/              # 飞牛 FPK 模板
 ├── VERSION              # 版本号
 ├── Makefile             # 构建入口
 └── Dockerfile           # Docker 多阶段构建
