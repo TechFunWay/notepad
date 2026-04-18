@@ -69,8 +69,8 @@ EOCONFIG
 }
 
 echo ""
-build_fnpack "amd64" "x86" "fnos-amd64"
 build_fnpack "arm64" "arm" "fnos-arm64"
+build_fnpack "amd64" "x86" "fnos-amd64"
 
 mv fnpack/manifest.bak fnpack/manifest
 

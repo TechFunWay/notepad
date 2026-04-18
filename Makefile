@@ -72,3 +72,9 @@ dev:
 	@lsof -t -i :8904 | xargs kill -9 2>/dev/null || true
 	@echo "==> Starting backend server..."
 	cd server && go run main.go
+
+build-fpk:
+	@echo "==> Building FPK package..."
+	./scripts/build-all.sh
+	./scripts/build-fnpack.sh
+	@echo "==> FPK package complete"
