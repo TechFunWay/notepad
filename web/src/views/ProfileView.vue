@@ -222,22 +222,14 @@ async function handleSecurityChange() {
 <style scoped>
 .profile-container {
   min-height: calc(100vh - 64px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 32px;
   background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
 }
 
 .profile-layout {
   display: flex;
   width: 100%;
-  max-width: 1100px;
-  min-height: 440px;
+  min-height: calc(100vh - 64px);
   background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 
 .profile-sidebar {
