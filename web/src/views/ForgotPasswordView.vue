@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getSecurityQuestion, forgotPassword } from '../api/auth'
 import api from '../api/request'
@@ -71,6 +71,11 @@ const form = ref({
   security_answer: '',
   new_password: '',
   confirm_password: ''
+})
+
+onMounted(async () => {
+  await nextTick()
+  usernameInput.value?.focus()
 })
 
 async function checkUsername() {
