@@ -83,7 +83,7 @@
 <script setup>
 import { ref } from 'vue'
 import { changePassword } from '../api/auth'
-import { ElMessage } from 'element-plus'
+import { message } from '@/utils/message'
 import { Lock, Key, Check } from '@element-plus/icons-vue'
 import { md5 } from '@/utils/crypto'
 
@@ -94,17 +94,17 @@ const form = ref({
   confirm_password: ''
 })
 
-async function handleChange() {
-  if (!form.value.current_password || !form.value.new_password) {
-    ElMessage.warning('请填写所有字段')
+async function handleChangePassword() {
+  if (!form.value.current_password || !form.value.new_password || !form.value.confirm_password) {
+    message.warning('请填写完整密码信息')
     return
   }
   if (form.value.new_password !== form.value.confirm_password) {
-    ElMessage.warning('两次输入的密码不一致')
+    message.warning('新密码与确认密码不一致')
     return
   }
   if (form.value.new_password.length < 6) {
-    ElMessage.warning('新密码至少6位')
+    message.warning('新密码至少6位')
     return
   }
   loading.value = true
@@ -113,10 +113,10 @@ async function handleChange() {
       current_password: md5(form.value.current_password),
       new_password: md5(form.value.new_password)
     })
-    ElMessage.success('密码修改成功')
+    message.success('密码修改成功')
     form.value = { current_password: '', new_password: '', confirm_password: '' }
   } catch (e) {
-    ElMessage.error(e.response?.data?.error || '修改失败')
+    message.error(e.response?.data?.error || '密码修改失败')
   } finally {
     loading.value = false
   }

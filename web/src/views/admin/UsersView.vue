@@ -109,7 +109,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { getUsers, createUser, updateUser, deleteUser } from '../../api/user'
-import { ElMessage } from 'element-plus'
+import { message } from '@/utils/message'
 import { md5 } from '@/utils/crypto'
 
 const users = ref([])
@@ -150,11 +150,11 @@ async function handleCreate() {
       password: md5(createForm.value.password),
       role: createForm.value.role
     })
-    ElMessage.success('创建成功')
+    message.success('创建成功')
     createDialogVisible.value = false
     loadUsers()
   } catch (e) {
-    ElMessage.error(e.response?.data?.error || '创建失败')
+    message.error(e.response?.data?.error || '创建失败')
   }
 }
 
@@ -175,21 +175,21 @@ async function handleEdit() {
     const payload = { role: editForm.value.role }
     if (editForm.value.password) payload.password = md5(editForm.value.password)
     await updateUser(editForm.value.id, payload)
-    ElMessage.success('更新成功')
+    message.success('更新成功')
     editDialogVisible.value = false
     loadUsers()
   } catch (e) {
-    ElMessage.error(e.response?.data?.error || '更新失败')
+    message.error(e.response?.data?.error || '更新失败')
   }
 }
 
 async function handleDelete(id) {
   try {
     await deleteUser(id)
-    ElMessage.success('删除成功')
+    message.success('删除成功')
     loadUsers()
   } catch (e) {
-    ElMessage.error(e.response?.data?.error || '删除失败')
+    message.error(e.response?.data?.error || '删除失败')
   }
 }
 </script>

@@ -129,7 +129,7 @@ import { useRouter } from 'vue-router'
 import { Plus, Document, Search, Edit, Delete, Clock } from '@element-plus/icons-vue'
 import { getNotes, createNote, deleteNote } from '@/api/note'
 import api from '@/api/request'
-import { ElMessage } from 'element-plus'
+import { message } from '@/utils/message'
 
 const router = useRouter()
 
@@ -165,7 +165,7 @@ async function loadNotes() {
     notes.value = data.notes
     total.value = data.total || notes.value.length
   } catch (e) {
-    ElMessage.error('加载笔记失败')
+    message.error('加载笔记失败')
   } finally {
     loading.value = false
   }
@@ -197,10 +197,10 @@ async function createNewNote() {
     const dd = String(today.getDate()).padStart(2, '0')
     const title = `${yy}${mm}${dd}的笔记`
     const { data } = await createNote({ title, content: '<p></p>', tags: '' })
-    ElMessage.success('创建成功')
+    message.success('创建成功')
     router.push({ path: '/', query: { note_id: data.id } })
   } catch (e) {
-    ElMessage.error('创建笔记失败')
+    message.error('创建笔记失败')
   }
 }
 
@@ -211,11 +211,11 @@ function openNote(note) {
 async function deleteNoteItem(note) {
   try {
     await deleteNote(note.id)
-    ElMessage.success('删除成功')
+    message.success('删除成功')
     await loadNotes()
     await loadTags()
   } catch (e) {
-    ElMessage.error('删除失败')
+    message.error('删除失败')
   }
 }
 
