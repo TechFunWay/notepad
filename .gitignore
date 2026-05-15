@@ -8,6 +8,7 @@ Icon
 
 # Thumbnails
 ._*
+Thumbs.db
 
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100
@@ -25,6 +26,13 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# IDE
+.idea
+.vscode/
+*.swp
+*.swo
+*~
+
 # Build output
 release/
 server/static/dist/
@@ -39,11 +47,14 @@ data/
 
 # Go
 server/notepad
+server/notepad-server
+server/data
 
 # Docker
 .docker/
-.idea
-web/dist
-web/node_modules
-server/data
-server/notepad-server
+
+# Playwright MCP (browser automation artifacts)
+.playwright-mcp/
+
+# Logs
+*.log
