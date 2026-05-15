@@ -13,6 +13,11 @@
             <span class="version">{{ version }}</span>
           </div>
           <div class="header-right">
+            <el-tooltip :content="isDark ? '切换亮色模式' : '切换暗色模式'" placement="bottom">
+              <button class="theme-toggle" @click="toggleTheme">
+                <el-icon><template v-if="isDark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></template><template v-else><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></template></el-icon>
+              </button>
+            </el-tooltip>
             <el-dropdown trigger="click" class="user-dropdown">
               <div class="user-info">
                 <div class="user-avatar">
@@ -60,6 +65,8 @@ import { useRouter } from 'vue-router'
 import { message } from '@/utils/message'
 import { Document, User, SwitchButton, Setting, UserFilled, Tools, ArrowDown } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { useTheme } from '@/composables/useTheme'
+const { isDark, toggleTheme } = useTheme()
 import api from '@/api/request'
 
 const router = useRouter()
@@ -100,7 +107,7 @@ onUnmounted(() => {
 <style scoped>
 .main-layout {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--bg-secondary);
 }
 
 .layout-container {
@@ -108,7 +115,7 @@ onUnmounted(() => {
 }
 
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--header-gradient);
   box-shadow: 0 2px 12px rgba(102, 126, 234, 0.15);
   padding: 0;
   height: 64px;
@@ -170,6 +177,31 @@ onUnmounted(() => {
 .header-right {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.theme-toggle .el-icon {
+  font-size: 20px;
 }
 
 .user-dropdown {

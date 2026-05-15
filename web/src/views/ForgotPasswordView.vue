@@ -172,7 +172,7 @@ async function resetPassword() {
 .auth-card {
   width: 100%;
   max-width: 400px;
-  background: white;
+  background: var(--bg-primary);
   padding: 40px 30px;
   border-radius: 16px;
   box-shadow: var(--card-shadow);
@@ -196,7 +196,7 @@ async function resetPassword() {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #f5f7fa;
+  background: var(--bg-secondary);
   border-radius: 8px;
   margin-bottom: 20px;
   color: #303133;

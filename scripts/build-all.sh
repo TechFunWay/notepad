@@ -30,7 +30,12 @@ compile() {
     DIR="${RELEASE_DIR}/${APP_NAME}-${VERSION}-${LABEL}"
     rm -rf "${DIR}"
     mkdir -p "${DIR}/www"
-    
+
+    # 复制前端构建产物到 server/static/dist 供 Go embed 使用
+    cd "${PROJECT_DIR}"
+    rm -rf server/static/dist
+    cp -r web/dist server/static/dist
+
     cd server
     CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -ldflags="-s -w" -o "../${DIR}/notepad" . 2>/dev/null
     cd ..
@@ -50,9 +55,16 @@ chmod +x notepad 2>/dev/null || true
     fi
     
     cp -r web/dist/* "${DIR}/www/"
-    
+
+    # 复制使用说明文档（如果存在）
+    for doc in release/v${VERSION}/README-*.md; do
+        if [ -f "$doc" ]; then
+            cp "$doc" "${DIR}/"
+        fi
+    done
+
     find "${DIR}" -name ".DS_Store" -delete 2>/dev/null || true
-    
+
     echo "✅"
 }
 

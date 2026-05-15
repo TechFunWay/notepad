@@ -93,7 +93,7 @@
           </div>
         </div>
         
-        <div class="note-preview">{{ stripHtml(note.content) }}</div>
+        <div class="note-preview">{{ stripHtml(note.content, 100) }}</div>
         
         <div class="note-footer">
           <div class="note-meta">
@@ -108,6 +108,11 @@
         </div>
       </div>
     </div>
+
+    <!-- 移动端浮动新建按钮 -->
+    <button v-if="isMobile" class="mobile-fab" @click="createNewNote">
+      <el-icon :size="24"><Plus /></el-icon>
+    </button>
 
     <div v-if="notes.length > 0 && total > pageSize" class="pagination-container">
       <el-pagination
@@ -126,10 +131,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Document, Search, Edit, Delete, Clock } from '@element-plus/icons-vue'
+import { Plus, Document, Search, Edit, Delete, Clock, Tickets } from '@element-plus/icons-vue'
 import { getNotes, createNote, deleteNote } from '@/api/note'
 import api from '@/api/request'
 import { message } from '@/utils/message'
+import { stripHtml, splitTags, formatDate } from '@/utils/note'
 
 const router = useRouter()
 
@@ -142,10 +148,17 @@ const currentPage = ref(1)
 const pageSize = ref(24)
 const total = ref(0)
 const allTags = ref([])
+const isMobile = ref(false)
 
 let searchTimer = null
 
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768
+}
+
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   loadNotes()
   loadTags()
 })
@@ -205,7 +218,7 @@ async function createNewNote() {
 }
 
 function openNote(note) {
-  router.push('/')
+  router.push({ path: '/', query: { note_id: note.id } })
 }
 
 async function deleteNoteItem(note) {
@@ -219,30 +232,6 @@ async function deleteNoteItem(note) {
   }
 }
 
-function stripHtml(html) {
-  if (!html) return ''
-  const div = document.createElement('div')
-  div.innerHTML = html
-  const text = div.textContent || div.innerText || ''
-  return text.length > 100 ? text.substring(0, 100) + '...' : text
-}
-
-function splitTags(tagsStr) {
-  if (!tagsStr) return []
-  return tagsStr.split(',').map(t => t.trim()).filter(Boolean)
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  const now = new Date()
-  const diff = now - d
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
-  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
-  if (diff < 604800000) return Math.floor(diff / 86400000) + '天前'
-  return d.toLocaleDateString()
-}
 </script>
 
 <style scoped>
@@ -271,7 +260,7 @@ function formatDate(dateStr) {
   gap: 12px;
   font-size: 28px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -335,12 +324,12 @@ function formatDate(dateStr) {
 
 .search-input :deep(.el-input__wrapper:hover) {
   box-shadow: 0 0 0 1px #667eea;
-  background: white;
+  background: var(--bg-primary);
 }
 
 .search-input :deep(.el-input__wrapper.is-focus) {
   box-shadow: 0 0 0 2px #667eea;
-  background: white;
+  background: var(--bg-primary);
 }
 
 .filter-group {
@@ -355,7 +344,7 @@ function formatDate(dateStr) {
 
 .loading-container {
   padding: 40px;
-  background: white;
+  background: var(--bg-primary);
   border-radius: 16px;
 }
 
@@ -364,9 +353,9 @@ function formatDate(dateStr) {
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  background: white;
+  background: var(--bg-primary);
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--card-shadow-lg);
 }
 
 .empty-content {
@@ -399,10 +388,10 @@ function formatDate(dateStr) {
 }
 
 .note-card {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--card-shadow);
   border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.3s;
@@ -425,7 +414,7 @@ function formatDate(dateStr) {
 .note-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -559,6 +548,44 @@ function formatDate(dateStr) {
   :deep(.el-pagination) {
     flex-wrap: wrap;
     justify-content: center;
+  }
+}
+
+/* 移动端浮动新建按钮 */
+.mobile-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  transition: all 0.3s ease;
+}
+
+.mobile-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.mobile-fab:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .mobile-fab {
+    bottom: 20px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
   }
 }
 </style>

@@ -258,7 +258,7 @@ async function handleRegister() {
 }
 
 .register-card {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 24px;
   box-shadow: 0 30px 80px -15px rgba(0, 0, 0, 0.3);
   display: flex;

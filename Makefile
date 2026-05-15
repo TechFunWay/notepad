@@ -2,7 +2,7 @@ VERSION := $(shell cat VERSION)
 BUILD_TIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS := -s -w -X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X main.GitCommit=$(GIT_COMMIT)
-DOCKER_REPO := wycto/notepad
+DOCKER_REPO := techfunways/notepad
 OUTPUT_DIR := release/$(VERSION)
 
 .PHONY: all clean web server build cross-compile docker build-fpk dev-server dev-web dev
