@@ -1,7 +1,6 @@
 appname               = techfunway-notepad
 version               = 1.0.0
 display_name          = 记事本
-desc                  = 支持多用户的记事本应用，可创建、编辑、管理笔记，支持富文本编辑、标签分类、多用户数据隔离、管理员配置等功能
 platform              = x86
 source                = thirdparty
 maintainer            = 科技智趣坊
@@ -10,6 +9,16 @@ distributor           = 科技智趣坊
 distributor_url       = http://techfunway.wycto.cn
 desktop_uidir         = ui
 desktop_applaunchname = techfunway-notepad.Application
+desc                  = 一款轻量、精美的多用户记事本应用，支持富文本编辑、标签分类管理、暗色模式、数据隔离，适合家庭或团队私有化部署
 changelog             = """
-更新
+1.0.0 首个正式版本
+- 笔记的创建、编辑、删除，支持富文本编辑
+- 标签分类与筛选
+- 笔记搜索、排序（按修改时间/创建时间/标题）
+- 多用户注册登录，数据完全隔离
+- 管理员可管理用户和系统配置
+- 安全问题找回密码
+- 暗色模式切换
+- 响应式设计，支持PC端和移动端
+- 数据库自动迁移，支持版本升级
 """

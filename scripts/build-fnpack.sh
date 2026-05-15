@@ -37,6 +37,13 @@ build_fnpack() {
     
     cp "${RELEASE_DIR}/${APP_NAME}-${VERSION}-linux-${ARCH}/notepad" "${DIR}/app/server/"
     cp -r "${RELEASE_DIR}/${APP_NAME}-${VERSION}-linux-${ARCH}/www/"* "${DIR}/app/www/"
+
+    # 复制使用说明文档到 app 目录
+    for doc in "${PROJECT_DIR}/release/v${VERSION}/README-"*.md; do
+        if [ -f "$doc" ]; then
+            cp "$doc" "${DIR}/app/"
+        fi
+    done
     
     # 删除 .DS_Store
     find "${DIR}" -name ".DS_Store" -delete 2>/dev/null || true

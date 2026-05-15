@@ -84,75 +84,118 @@
           </el-button>
         </div>
 
-        <div class="editor-header">
-          <el-button
-            v-if="!isMobile"
-            type="primary"
-            class="back-to-list-btn"
-            :icon="Tickets"
-            text
-            @click="backToList"
-          >
-            <span>笔记列表</span>
-          </el-button>
-          <el-input
-            v-model="currentNote.title"
-            placeholder="笔记标题"
-            class="title-input"
-            @input="markDirty"
-          />
-        </div>
-
-        <div class="editor-toolbar">
-          <div class="toolbar-left">
-            <div class="meta-item">
-              <el-icon><Calendar /></el-icon>
-              <span>创建: {{ formatFullDate(currentNote.created_at) }}</span>
-            </div>
-            <div class="meta-item">
-              <el-icon><Edit /></el-icon>
-              <span>修改: {{ formatFullDate(currentNote.updated_at) }}</span>
-            </div>
-          </div>
-          <div class="toolbar-right">
-            <div class="tags-selector">
-              <el-icon><Tickets /></el-icon>
-              <el-select
-                v-model="currentTagInput"
-                multiple
-                filterable
-                allow-create
-                default-first-option
-                placeholder="添加标签..."
-                size="small"
-                class="tags-select"
-                @change="markDirty"
-                @remove-tag="markDirty"
+        <!-- View Mode -->
+        <div v-if="!editMode" class="note-view">
+          <div class="view-header">
+            <div class="view-title-row">
+              <el-button
+                v-if="!isMobile"
+                class="back-to-list-btn"
+                :icon="Tickets"
+                text
+                @click="backToList"
               >
-                <el-option v-for="tag in allTags" :key="tag" :label="tag" :value="tag" />
-              </el-select>
-            </div>
-            <div class="action-buttons">
-              <el-button 
-                type="primary" 
-                class="save-btn"
-                :icon="Check" 
-                :loading="saving" 
-                @click="saveNote"
-              >
-                <span>保存</span>
+                <span>笔记列表</span>
               </el-button>
-              <el-popconfirm title="确定删除这个笔记吗？" @confirm="removeNote">
-                <template #reference>
-                  <el-button class="delete-btn" :icon="Delete"></el-button>
-                </template>
-              </el-popconfirm>
+              <h1 class="view-title">{{ currentNote.title || '无标题' }}</h1>
             </div>
+            <div class="view-meta">
+              <span class="meta-item">
+                <el-icon><Calendar /></el-icon>
+                创建: {{ formatFullDate(currentNote.created_at) }}
+              </span>
+              <span class="meta-item">
+                <el-icon><Edit /></el-icon>
+                修改: {{ formatFullDate(currentNote.updated_at) }}
+              </span>
+            </div>
+            <div v-if="currentTagInput.length" class="view-tags">
+              <el-tag v-for="t in currentTagInput" :key="t" size="small" class="view-tag">{{ t }}</el-tag>
+            </div>
+          </div>
+          <div class="view-content" v-html="currentNote.content"></div>
+          <div class="view-footer">
+            <el-button type="primary" :icon="EditPen" @click="enterEditMode">编辑</el-button>
+            <el-popconfirm title="确定删除这个笔记吗？" @confirm="removeNote">
+              <template #reference>
+                <el-button :icon="Delete">删除</el-button>
+              </template>
+            </el-popconfirm>
           </div>
         </div>
 
-        <div class="editor-content">
-          <TiptapEditor v-model="currentNote.content" @update:model-value="markDirty" />
+        <!-- Edit Mode -->
+        <div v-if="editMode">
+          <div class="editor-header">
+            <el-button
+              v-if="!isMobile"
+              class="back-to-list-btn"
+              :icon="Tickets"
+              text
+              @click="backToList"
+            >
+              <span>笔记列表</span>
+            </el-button>
+            <el-input
+              v-model="currentNote.title"
+              placeholder="笔记标题"
+              class="title-input"
+              @input="markDirty"
+            />
+          </div>
+
+          <div class="editor-toolbar">
+            <div class="toolbar-left">
+              <div class="meta-item">
+                <el-icon><Calendar /></el-icon>
+                <span>创建: {{ formatFullDate(currentNote.created_at) }}</span>
+              </div>
+              <div class="meta-item">
+                <el-icon><Edit /></el-icon>
+                <span>修改: {{ formatFullDate(currentNote.updated_at) }}</span>
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <div class="tags-selector">
+                <el-icon><Tickets /></el-icon>
+                <el-select
+                  v-model="currentTagInput"
+                  multiple
+                  filterable
+                  allow-create
+                  default-first-option
+                  placeholder="添加标签..."
+                  size="small"
+                  class="tags-select"
+                  @change="markDirty"
+                  @remove-tag="markDirty"
+                >
+                  <el-option v-for="tag in allTags" :key="tag" :label="tag" :value="tag" />
+                </el-select>
+              </div>
+              <div class="action-buttons">
+                <el-button :icon="View" @click="exitEditMode">预览</el-button>
+                <el-button
+                  type="primary"
+                  class="save-btn"
+                  :icon="Check"
+                  :loading="saving"
+                  @click="saveNote"
+                >
+                  <span>保存</span>
+                </el-button>
+                <el-popconfirm title="确定删除这个笔记吗？" @confirm="removeNote">
+                  <template #reference>
+                    <el-button class="delete-btn" :icon="Delete"></el-button>
+                  </template>
+                </el-popconfirm>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-content">
+            <TiptapEditor v-model="currentNote.content" @update:model-value="markDirty" />
+          </div>
         </div>
       </template>
 
@@ -162,7 +205,7 @@
             <h2>欢迎回来</h2>
             <p>开始记录您的灵感与想法</p>
           </div>
-          
+
           <div class="dashboard-stats">
             <div class="stat-card">
               <div class="stat-icon">
@@ -183,7 +226,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="recent-notes-section">
             <div class="section-header">
               <h3>最近笔记</h3>
@@ -206,16 +249,21 @@
         </div>
       </div>
     </div>
+
+    <!-- 移动端浮动新建按钮 -->
+    <button v-if="isMobile && !currentNote" class="mobile-fab" @click="createNewNote">
+      <el-icon :size="24"><Plus /></el-icon>
+    </button>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { Plus, Check, Delete, Document, EditPen, ArrowLeft, FolderOpened, Notebook, Clock, Search, Tickets, Close, Calendar, Edit } from '@element-plus/icons-vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
+import { Plus, Check, Delete, Document, EditPen, ArrowLeft, FolderOpened, Notebook, Clock, Search, Tickets, Close, Calendar, Edit, View } from '@element-plus/icons-vue'
 import { getNotes, createNote, updateNote, deleteNote, getNote } from '@/api/note'
 import api from '@/api/request'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import TiptapEditor from '@/components/TiptapEditor.vue'
 
 const router = useRouter()
@@ -228,11 +276,14 @@ const searchQuery = ref('')
 const loading = ref(false)
 const saving = ref(false)
 const isDirty = ref(false)
+const editMode = ref(false)
 const isMobile = ref(false)
 const sidebarOpen = ref(false)
 const allTags = ref([])
 const activeTag = ref('')
 let searchTimer = null
+let autoSaveTimer = null
+const AUTO_SAVE_DELAY = 3000
 
 // 最近笔记（最多显示5个）
 const recentNotes = ref([])
@@ -242,9 +293,43 @@ function loadAllNotes() {
   router.push('/notes-list')
 }
 
+function handleKeydown(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault()
+    saveNote(true)
+  }
+}
+
+function handleBeforeUnload(e) {
+  if (isDirty.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+onBeforeRouteLeave((to, from, next) => {
+  if (isDirty.value) {
+    clearTimeout(autoSaveTimer)
+    ElMessageBox.confirm('笔记内容尚未保存，确定要离开吗？', '未保存的修改', {
+      confirmButtonText: '离开',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }).then(() => {
+      isDirty.value = false
+      next()
+    }).catch(() => {
+      next(false)
+    })
+  } else {
+    next()
+  }
+})
+
 onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('beforeunload', handleBeforeUnload)
   await loadNotes()
   await loadTags()
   await openNoteFromQuery()
@@ -252,6 +337,17 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
+  window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+  clearTimeout(autoSaveTimer)
+})
+
+watch(() => route.query.note_id, async (newId) => {
+  if (!newId) return
+  await nextTick()
+  await loadNotes()
+  await loadTags()
+  await openNoteFromQuery()
 })
 
 function checkMobile() {
@@ -293,6 +389,7 @@ async function openNoteFromQuery() {
     currentNote.value = { ...data }
     currentTagInput.value = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : []
     isDirty.value = false
+    editMode.value = false
   } catch (e) {
     ElMessage.error('加载笔记失败')
   }
@@ -320,16 +417,31 @@ async function createNewNote() {
     currentNote.value = { ...data }
     currentTagInput.value = []
     isDirty.value = false
+    editMode.value = true
     sidebarOpen.value = false
   } catch (e) {
     ElMessage.error('创建笔记失败')
   }
 }
 
-function selectNote(note) {
+async function selectNote(note) {
+  // If there are unsaved changes, save them silently first
+  if (isDirty.value && currentNote.value) {
+    clearTimeout(autoSaveTimer)
+    const prevNote = currentNote.value
+    try {
+      const tags = currentTagInput.value.join(', ')
+      await updateNote(prevNote.id, {
+        title: prevNote.title,
+        content: prevNote.content,
+        tags
+      })
+    } catch (e) {/* ignore save errors on switch */}
+  }
   currentNote.value = { ...note }
   currentTagInput.value = note.tags ? note.tags.split(',').map(t => t.trim()).filter(Boolean) : []
   isDirty.value = false
+  editMode.value = false
   if (isMobile.value) {
     sidebarOpen.value = false
   }
@@ -341,10 +453,26 @@ function backToList() {
 }
 
 function markDirty() {
-  isDirty.value = true
+  if (!isDirty.value) {
+    isDirty.value = true
+  }
+  clearTimeout(autoSaveTimer)
+  autoSaveTimer = setTimeout(() => saveNote(false), AUTO_SAVE_DELAY)
 }
 
-async function saveNote() {
+function enterEditMode() {
+  editMode.value = true
+}
+
+async function exitEditMode() {
+  if (isDirty.value) {
+    clearTimeout(autoSaveTimer)
+    await saveNote(false)
+  }
+  editMode.value = false
+}
+
+async function saveNote(showToast = true) {
   if (!currentNote.value) return
   saving.value = true
   try {
@@ -355,11 +483,12 @@ async function saveNote() {
       tags
     })
     isDirty.value = false
-    ElMessage.success('保存成功')
+    clearTimeout(autoSaveTimer)
+    if (showToast) ElMessage.success('保存成功')
     await loadNotes()
     await loadTags()
   } catch (e) {
-    ElMessage.error('保存失败')
+    if (showToast) ElMessage.error('保存失败')
   } finally {
     saving.value = false
   }
@@ -378,30 +507,7 @@ async function removeNote() {
   }
 }
 
-function stripHtml(html) {
-  if (!html) return ''
-  const div = document.createElement('div')
-  div.innerHTML = html
-  const text = div.textContent || div.innerText || ''
-  return text.length > 80 ? text.substring(0, 80) + '...' : text
-}
-
-function splitTags(tagsStr) {
-  if (!tagsStr) return []
-  return tagsStr.split(',').map(t => t.trim()).filter(Boolean)
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  const now = new Date()
-  const diff = now - d
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
-  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
-  if (diff < 604800000) return Math.floor(diff / 86400000) + '天前'
-  return d.toLocaleDateString()
-}
+import { stripHtml, splitTags, formatDate } from '@/utils/note'
 
 function formatFullDate(dateStr) {
   if (!dateStr) return '-'
@@ -414,16 +520,16 @@ function formatFullDate(dateStr) {
   display: flex;
   height: calc(100vh - 64px);
   position: relative;
-  background: #f5f7fa;
+  background: var(--bg-secondary);
 }
 
 .notes-sidebar {
   width: 320px;
-  background: white;
+  background: var(--bg-primary);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  border-right: 1px solid #e8eaed;
+  border-right: 1px solid var(--border-color);
 }
 
 .sidebar-header {
@@ -435,7 +541,7 @@ function formatFullDate(dateStr) {
   height: 44px;
   border-radius: 12px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   border: none;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   transition: all 0.3s;
@@ -459,7 +565,7 @@ function formatFullDate(dateStr) {
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 18px;
   z-index: 1;
 }
@@ -467,19 +573,19 @@ function formatFullDate(dateStr) {
 .search-input :deep(.el-input__wrapper) {
   padding-left: 44px !important;
   border-radius: 12px;
-  box-shadow: 0 0 0 1px #e5e7eb;
-  background: #f9fafb;
+  box-shadow: 0 0 0 1px var(--border-color);
+  background: var(--bg-secondary);
   transition: all 0.3s;
 }
 
 .search-input :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px #667eea;
-  background: white;
+  box-shadow: 0 0 0 1px var(--primary-color);
+  background: var(--bg-primary);
 }
 
 .search-input :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 2px #667eea;
-  background: white;
+  box-shadow: 0 0 0 2px var(--primary-color);
+  background: var(--bg-primary);
 }
 
 .sidebar-tags {
@@ -492,7 +598,7 @@ function formatFullDate(dateStr) {
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 
@@ -507,30 +613,39 @@ function formatFullDate(dateStr) {
   border-radius: 8px;
   font-size: 13px;
   cursor: pointer;
-  background: #f3f4f6;
-  color: #4b5563;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
   border: none;
   transition: all 0.2s;
 }
 
 .tag-item:hover {
-  background: #e5e7eb;
+  background: var(--border-color);
   transform: translateY(-1px);
 }
 
 .tag-item.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   color: white;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .clear-tag {
   background: #fef2f2;
-  color: #dc2626;
+  color: var(--danger-color);
 }
 
 .clear-tag:hover {
   background: #fee2e2;
+}
+
+html[data-theme="dark"] .clear-tag {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+html[data-theme="dark"] .clear-tag:hover {
+  background: rgba(239, 68, 68, 0.25);
 }
 
 .note-list {
@@ -545,17 +660,17 @@ function formatFullDate(dateStr) {
   cursor: pointer;
   border-radius: 12px;
   transition: all 0.2s;
-  background: #fafafa;
+  background: var(--bg-tertiary);
 }
 
 .note-item:hover {
-  background: #f3f4f6;
+  background: var(--bg-tertiary);
   transform: translateY(-1px);
 }
 
 .note-item.active {
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-  border: 2px solid #667eea;
+  border: 2px solid var(--primary-color);
 }
 
 .note-item-header {
@@ -568,7 +683,7 @@ function formatFullDate(dateStr) {
 .note-item-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -579,7 +694,7 @@ function formatFullDate(dateStr) {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #667eea;
+  background: var(--primary-color);
   opacity: 0;
   flex-shrink: 0;
 }
@@ -590,7 +705,7 @@ function formatFullDate(dateStr) {
 
 .note-item-preview {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 10px;
   line-height: 1.5;
   display: -webkit-box;
@@ -610,7 +725,7 @@ function formatFullDate(dateStr) {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .note-item-tags {
@@ -620,8 +735,8 @@ function formatFullDate(dateStr) {
 
 .mini-tag {
   padding: 2px 8px;
-  background: #e5e7eb;
-  color: #4b5563;
+  background: var(--border-color);
+  color: var(--text-secondary);
   font-size: 11px;
   border-radius: 6px;
 }
@@ -636,20 +751,20 @@ function formatFullDate(dateStr) {
 }
 
 .empty-icon {
-  color: #d1d5db;
+  color: var(--text-muted);
   margin-bottom: 16px;
 }
 
 .empty-list h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
   margin: 0 0 6px;
 }
 
 .empty-list p {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -657,7 +772,7 @@ function formatFullDate(dateStr) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: white;
+  background: var(--bg-primary);
   min-width: 0;
   overflow: hidden;
 }
@@ -665,11 +780,11 @@ function formatFullDate(dateStr) {
 .editor-mobile-top {
   padding: 12px 16px 0;
   flex-shrink: 0;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .back-btn {
-  color: #667eea;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
@@ -683,13 +798,13 @@ function formatFullDate(dateStr) {
 
 .back-to-list-btn {
   flex-shrink: 0;
-  color: #667eea;
+  color: var(--primary-color);
   font-weight: 500;
   font-size: 14px;
 }
 
 .back-to-list-btn:hover {
-  color: #764ba2;
+  color: var(--primary-hover);
 }
 
 .title-input :deep(.el-input__wrapper) {
@@ -700,7 +815,7 @@ function formatFullDate(dateStr) {
 }
 
 .title-input :deep(.el-input__inner) {
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .editor-toolbar {
@@ -708,7 +823,7 @@ function formatFullDate(dateStr) {
   align-items: center;
   justify-content: space-between;
   padding: 12px 32px 16px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
   flex-wrap: wrap;
   gap: 12px;
@@ -724,7 +839,7 @@ function formatFullDate(dateStr) {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .toolbar-right {
@@ -737,7 +852,7 @@ function formatFullDate(dateStr) {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .tags-select {
@@ -752,7 +867,7 @@ function formatFullDate(dateStr) {
 .save-btn {
   border-radius: 10px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   border: none;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
@@ -770,7 +885,7 @@ function formatFullDate(dateStr) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-align: center;
   padding: 8px 16px;
   overflow-y: auto;
@@ -779,20 +894,20 @@ function formatFullDate(dateStr) {
 .editor-empty h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0 0 8px;
 }
 
 .editor-empty p {
   font-size: 15px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0 0 16px;
 }
 
 .empty-btn {
   border-radius: 12px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   border: none;
 }
 
@@ -810,14 +925,14 @@ function formatFullDate(dateStr) {
 .dashboard-header h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 4px 0 2px;
   letter-spacing: -0.5px;
 }
 
 .dashboard-header p {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0 0 8px;
 }
 
@@ -829,7 +944,7 @@ function formatFullDate(dateStr) {
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 16px;
   padding: 20px 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
@@ -837,7 +952,7 @@ function formatFullDate(dateStr) {
   align-items: center;
   gap: 12px;
   transition: all 0.3s ease;
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--border-light);
 }
 
 .stat-card:hover {
@@ -848,7 +963,7 @@ function formatFullDate(dateStr) {
 .stat-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -869,23 +984,23 @@ function formatFullDate(dateStr) {
 .stat-number {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   line-height: 1;
   margin-bottom: 2px;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .recent-notes-section {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 16px;
   padding: 20px 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--border-light);
 }
 
 .section-header {
@@ -898,18 +1013,18 @@ function formatFullDate(dateStr) {
 .section-header h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .more-link {
-  color: #667eea !important;
+  color: var(--primary-color) !important;
   font-weight: 500;
   font-size: 12px;
 }
 
 .more-link:hover {
-  color: #764ba2 !important;
+  color: var(--primary-hover) !important;
 }
 
 .recent-notes-list {
@@ -921,7 +1036,7 @@ function formatFullDate(dateStr) {
 .recent-note-item {
   padding: 16px;
   border-radius: 12px;
-  background: #f9fafb;
+  background: var(--bg-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
@@ -929,15 +1044,15 @@ function formatFullDate(dateStr) {
 }
 
 .recent-note-item:hover {
-  background: #f3f4f6;
+  background: var(--bg-tertiary);
   transform: translateY(-1px);
-  border-color: #e5e7eb;
+  border-color: var(--border-color);
 }
 
 .recent-note-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 6px;
   white-space: nowrap;
   overflow: hidden;
@@ -946,7 +1061,7 @@ function formatFullDate(dateStr) {
 
 .recent-note-preview {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 8px;
   line-height: 1.5;
   display: -webkit-box;
@@ -957,7 +1072,7 @@ function formatFullDate(dateStr) {
 
 .recent-note-time {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -966,7 +1081,7 @@ function formatFullDate(dateStr) {
 .no-recent-notes {
   text-align: center;
   padding: 32px 16px;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -976,8 +1091,138 @@ function formatFullDate(dateStr) {
   font-weight: 600;
   font-size: 14px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   border: none;
+}
+
+/* View mode styles */
+.note-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 32px 40px;
+}
+
+.view-header {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.view-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.view-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.view-meta {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.view-meta .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.view-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.view-content {
+  flex: 1;
+  line-height: 1.8;
+  font-size: 16px;
+  color: var(--text-primary);
+  padding: 8px 0 24px;
+}
+
+.view-content :deep(h1) {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+.view-content :deep(h2) {
+  font-size: 1.5em;
+  margin: 0.75em 0;
+}
+
+.view-content :deep(h3) {
+  font-size: 1.17em;
+  margin: 0.83em 0;
+}
+
+.view-content :deep(p) {
+  margin: 1em 0;
+}
+
+.view-content :deep(ul),
+.view-content :deep(ol) {
+  padding-left: 2em;
+  margin: 1em 0;
+}
+
+.view-content :deep(li) {
+  margin: 0.5em 0;
+}
+
+.view-content :deep(blockquote) {
+  border-left: 4px solid var(--primary-color);
+  padding-left: 16px;
+  margin: 1em 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.view-content :deep(code) {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.view-content :deep(pre) {
+  background: var(--bg-tertiary);
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.view-content :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+
+.view-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1em 0;
+}
+
+.view-footer {
+  display: flex;
+  gap: 12px;
+  padding: 24px 0 8px;
+  border-top: 1px solid var(--border-light);
 }
 
 /* 移动端特定优化 */
@@ -1113,6 +1358,67 @@ function formatFullDate(dateStr) {
 
   .editor-content {
     padding-bottom: 20px;
+  }
+
+  .note-view {
+    padding: 16px;
+  }
+
+  .view-title {
+    font-size: 24px;
+  }
+
+  .view-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .view-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .view-footer .el-button {
+    width: 100%;
+  }
+}
+
+/* 移动端浮动新建按钮 */
+.mobile-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  transition: all 0.3s ease;
+}
+
+.mobile-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.mobile-fab:active {
+  transform: scale(0.95);
+}
+
+/* Also show the FAB on the notes-list page when sidebar is hidden */
+@media (max-width: 768px) {
+  .mobile-fab {
+    bottom: 20px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
   }
 }
 </style>

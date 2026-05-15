@@ -117,6 +117,9 @@ async function handleEdit() {
   overflow-y: auto;
   height: 100%;
   -webkit-overflow-scrolling: touch;
+  background: var(--bg-primary);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
 }
 
 .admin-header {

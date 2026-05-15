@@ -264,14 +264,16 @@ async function handleSecurityChange() {
 <style scoped>
 .profile-container {
   min-height: calc(100vh - 64px);
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  background: var(--bg-secondary);
 }
 
 .profile-layout {
   display: flex;
   width: 100%;
   min-height: calc(100vh - 64px);
-  background: white;
+  background: var(--bg-primary);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
 }
 
 .profile-sidebar {

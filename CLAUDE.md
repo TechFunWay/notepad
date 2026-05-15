@@ -9,58 +9,62 @@ Multi-user notepad web application targeting Feiniu NAS (飞牛NAS), Docker, and
 ## Build & Development Commands
 
 ```bash
-# Local development (run in separate terminals)
-make dev-server          # Go server on :8904 (default)
-make dev-web             # Vite dev server, proxies /api -> :8904
+# Local development - run in separate terminals
+make dev-server          # Go backend on :8904 (auto-kills existing process)
+make dev-web             # Vite dev server on :3000, proxies /api -> :8904
 
-# Production build
-make build               # Frontend + Go binary -> release/<VERSION>/notepad
+# Full-stack local (builds frontend then starts backend)
+make dev                 # npm ci -> npm run build -> copy dist -> go run on :8904
 
-# Cross-platform builds
+# Production (frontend + Go binary -> release/<VERSION>/notepad)
+make build
+
+# Cross-platform
 make cross-compile       # linux/amd64, linux/arm64, darwin/amd64, darwin/arm64
 make docker              # Multi-platform Docker image (wycto/notepad)
-make fpk                 # Feiniu NAS FPK package
-make all-build           # cross-compile + fpk
+make build-fpk           # Cross-compile + Feiniu NAS FPK package
+
+make clean               # Remove release/, dist/, and web/dist
 ```
 
-No test suite or linter is configured in this project.
+No test suite, linter, type checker, or CI is configured in this project.
 
 ## Architecture
 
+Two independent packages in a monorepo: `server/` (Go, `go.mod` root) and `web/` (Vue 3, `package.json` root). No workspace tooling links them.
+
 ### Backend (Go + Gin + SQLite)
 
-- **Entry**: `server/main.go` — dispatches between CLI mode (`cmd/cli.go`) and server mode (`cmd/server.go`) based on CLI args
-- **Config**: Environment variables only — `PORT` (8904), `DB_PATH`, `JWT_SECRET`, `DATA_DIR`. See `server/config/config.go`
-- **Database**: `modernc.org/sqlite` (pure Go, no CGO). WAL mode, max 1 connection. Custom migration system in `server/database/` with `schema_migrations` table — add new migrations as numbered functions in `migrations.go`
-- **Models**: Raw SQL, no ORM. `database.DB` is the global `*sql.DB` instance
+- **Entry**: `server/main.go` — dispatches between CLI mode (`cmd/cli.go`) and server mode (`cmd/server.go`) when first arg doesn't start with `-`
+- **Config**: `config.Load()` reads env vars with sensible defaults. See `server/config/config.go`. Supports `PORT`, `DATA_DIR`, `DB_PATH`, `JWT_SECRET`, `WEB_DIR`, `UPLOAD_DIR`, `SHARE_DIRS` (colon-separated, served under `/uploads`)
+- **Module path**: `notepad` (in `server/go.mod`)
+- **Database**: `modernc.org/sqlite` (pure Go, no CGO). WAL mode, `SetMaxOpenConns(1)`. Global `database.DB *sql.DB`. See `server/database/database.go`
+- **Migrations**: Custom upgrade system in `server/database/upgrade.go`. Uses `upgrade_records` table (not `schema_migrations`). Append to the `upgrades` slice as `{"version", func(tx)}`. Version in `VERSION` file (no `v` prefix). Anti-downgrade protection at startup
 - **Auth**: JWT via `Authorization: Bearer` header or `token` cookie. First registered user becomes admin automatically
-- **Static**: Frontend built into `server/static/dist/`, embedded via Go embed. SPA fallback serves `index.html` for non-API routes
+- **Middleware**: `CORS()` (wide open), `RequireAuth()` (parses JWT, sets `userID`/`username`/`role` in Gin context), `RequireAdmin()` (checks role == "admin")
+- **File upload**: POST `/api/upload` (auth required). Accepts jpg/png/gif/webp only, saves to `UPLOAD_DIR` with UUID filename, served under `/uploads/`
+- **Logger**: Simple file logger in `server/logger/logger.go`, writes to `DATA_DIR/logs/`
+- **Static**: Frontend built into `server/static/dist/`, embedded via `//go:embed` in `server/static/embed.go`. SPA fallback serves `index.html` for non-API routes. Priority: external `webDir` path > external `dist` dir > embedded FS
+- **API routes** (all under `/api`):
+  - Public: `auth/register`, `auth/login`, `auth/security-question`, `auth/verify-answer`, `auth/forgot-password`, `public-config`, `version`, `health`
+  - Authenticated: `auth/logout`, `auth/change-password`, `auth/security-question` (PUT), `upload`, `notes` (CRUD), `notes/tags`
+  - Admin: `users` (CRUD), `configs` (list + update by key)
+- **Database tables**: `users` (id, username, password_hash, security_question, security_answer_hash, role, timestamps), `notes` (id, user_id FK, title, content, tags, timestamps), `configs` (id, key, value, description, updated_at)
+- **CLI tools**: `./notepad find-admin`, `./notepad recover-admin`, `./notepad list-users`
 
-### Frontend (Vue 3 + Element Plus + TipTap)
+### Frontend (Vue 3 + Element Plus + TipTap + Pinia)
 
-- **Build**: Vite with `@vitejs/plugin-vue`. Dev proxy in `vite.config.js` forwards `/api` to `:8904`
+- **Build**: Vite with `@vitejs/plugin-vue`, `@` alias maps to `src/`. Dev proxy in `vite.config.js` forwards `/api` to `:8904`
+- **Routing**: HTML5 history mode. Auth guards redirect unauthenticated to `/login`, non-admin away from `/admin/*`. Routes: `/login`, `/register`, `/forgot-password` (public), `/` + `/notes-list` + `/profile` (auth), `/admin/users` + `/admin/configs` (admin)
 - **State**: Pinia stores in `web/src/stores/` — `auth.js` (token/user in localStorage), `config.js` (site title, registration toggle)
-- **API layer**: Axios instance in `web/src/api/request.js` — auto-attaches Bearer token, auto-redirects on 401
-- **Rich text**: TipTap editor in `web/src/components/TiptapEditor.vue`
-- **Routing**: HTML5 history mode. Auth guards in `web/src/router/index.js` — unauthenticated users redirected to `/login`
-
-### API Routes (all under `/api`)
-
-Public: `/auth/register`, `/auth/login`, `/auth/security-question`, `/auth/forgot-password`, `/public-config`, `/version`, `/health`
-
-Authenticated: `/notes` (CRUD), `/notes/tags`, `/auth/logout`, `/auth/change-password`
-
-Admin: `/users` (CRUD), `/configs` (read + update by key)
-
-### Database Schema (migrations)
-
-- `users` — id, username, password_hash, security_question, security_answer_hash, role, timestamps
-- `notes` — id, user_id (FK), title, content, tags, timestamps
-- `configs` — id, key, value, description, updated_at
+- **API layer**: Axios instance in `web/src/api/request.js` — auto-attaches Bearer token from localStorage, redirects to `/login` on 401
+- **Rich text**: TipTap editor in `web/src/components/TiptapEditor.vue` with extensions for placeholder, color, highlight, underline, text-align, image
 
 ## Key Patterns
 
-- Version/build info injected via Go ldflags: `-X main.Version=... -X main.BuildTime=... -X main.GitCommit=...`
-- `CGO_ENABLED=0` for all Go builds (pure Go SQLite)
-- CLI tools: `recover-admin` (reset admin password), `find-admin` (show admin info), `list-users` (list all users)
+- Version/build info injected via Go ldflags: `-X main.Version=$(VERSION) -X main.BuildTime=... -X main.GitCommit=...`
+- `CGO_ENABLED=0` for all Go builds — `modernc.org/sqlite` is pure Go, never enable CGO
 - Deployment data volume at `/app/data` (Docker) or `./data` (local)
+- DB_PATH and DATA_DIR can differ — DB_PATH is `DATA_DIR/notepad.db` by default
+- All frontend API modules (`web/src/api/`) return Axios promises with automatic error handling
+- Raw SQL, no ORM. `database.DB` is accessed globally

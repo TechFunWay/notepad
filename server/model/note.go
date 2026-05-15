@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strings"
 	"time"
 
 	"notepad/database"
@@ -87,14 +88,14 @@ func ListNotes(userID int64, page, pageSize int, search, tag, sortBy string) (*N
 	}
 
 	queryArgs := append([]interface{}{}, args...)
-	
+
 	orderClause := "ORDER BY updated_at DESC"
 	if sortBy == "title" {
 		orderClause = "ORDER BY title ASC"
 	} else if sortBy == "created_at" {
 		orderClause = "ORDER BY created_at DESC"
 	}
-	
+
 	queryArgs = append(queryArgs, pageSize, offset)
 
 	rows, err := database.DB.Query(
@@ -148,9 +149,8 @@ func GetAllTags(userID int64) ([]string, error) {
 			return nil, err
 		}
 		for _, tag := range splitTags(tagsStr) {
-			t := trim(tag)
-			if t != "" {
-				tagSet[t] = true
+			if tag != "" {
+				tagSet[tag] = true
 			}
 		}
 	}
@@ -167,38 +167,11 @@ func splitTags(s string) []string {
 		return nil
 	}
 	var result []string
-	for _, part := range split(s, ",") {
-		t := trim(part)
+	for _, part := range strings.Split(s, ",") {
+		t := strings.TrimSpace(part)
 		if t != "" {
 			result = append(result, t)
 		}
 	}
 	return result
-}
-
-func split(s, sep string) []string {
-	if s == "" {
-		return nil
-	}
-	var result []string
-	start := 0
-	for i := 0; i <= len(s)-len(sep); i++ {
-		if s[i:i+len(sep)] == sep {
-			result = append(result, s[start:i])
-			start = i + len(sep)
-			i += len(sep) - 1
-		}
-	}
-	result = append(result, s[start:])
-	return result
-}
-
-func trim(s string) string {
-	for len(s) > 0 && s[0] == ' ' {
-		s = s[1:]
-	}
-	for len(s) > 0 && s[len(s)-1] == ' ' {
-		s = s[:len(s)-1]
-	}
-	return s
 }
