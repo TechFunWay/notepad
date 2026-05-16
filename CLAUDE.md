@@ -60,6 +60,19 @@ Two independent packages in a monorepo: `server/` (Go, `go.mod` root) and `web/`
 - **API layer**: Axios instance in `web/src/api/request.js` — auto-attaches Bearer token from localStorage, redirects to `/login` on 401
 - **Rich text**: TipTap editor in `web/src/components/TiptapEditor.vue` with extensions for placeholder, color, highlight, underline, text-align, image
 
+## Git 提交规范
+
+- 提交备注**全部使用中文**，禁止使用英文
+- 格式：`类型：描述`
+- 常用类型：`新增`、`修复`、`优化`、`更新`、`清理`、`文档`、`重构`
+- 尾部追加 `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`
+- 示例：
+  ```
+  新增：手机端浮动新建按钮
+
+  Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+  ```
+
 ## Key Patterns
 
 - Version/build info injected via Go ldflags: `-X main.Version=$(VERSION) -X main.BuildTime=... -X main.GitCommit=...`
