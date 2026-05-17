@@ -39,7 +39,7 @@ docker run -d \
   -p 8904:8904 \
   -v ./data:/app/data \
   -e JWT_SECRET=your-secret-key \
-  wycto/notepad:latest
+  techfunways/notepad:latest
 ```
 
 ### Docker Compose

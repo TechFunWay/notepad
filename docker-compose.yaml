@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   notepad:
-    image: wycto/notepad:latest
+    image: techfunways/notepad:latest
     container_name: notepad
     ports:
       - "8904:8904"
