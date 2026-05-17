@@ -21,7 +21,7 @@ make build
 
 # Cross-platform
 make cross-compile       # linux/amd64, linux/arm64, darwin/amd64, darwin/arm64
-make docker              # Multi-platform Docker image (wycto/notepad)
+make docker              # Multi-platform Docker image (techfunways/notepad)
 make build-fpk           # Cross-compile + Feiniu NAS FPK package
 
 make clean               # Remove release/, dist/, and web/dist
