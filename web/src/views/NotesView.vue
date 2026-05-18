@@ -125,7 +125,7 @@
         </div>
 
         <!-- Edit Mode -->
-        <div v-if="editMode">
+        <div v-if="editMode" class="editor-edit-area">
           <div class="editor-header">
             <el-button
               v-if="!isMobile"
@@ -173,7 +173,7 @@
                   <el-option v-for="tag in allTags" :key="tag" :label="tag" :value="tag" />
                 </el-select>
               </div>
-              <div class="action-buttons">
+              <div v-if="!isMobile" class="action-buttons">
                 <el-button :icon="View" @click="exitEditMode">预览</el-button>
                 <el-button
                   type="primary"
@@ -195,6 +195,25 @@
 
           <div class="editor-content">
             <TiptapEditor v-model="currentNote.content" @update:model-value="markDirty" />
+          </div>
+
+          <!-- 移动端底部固定操作栏 -->
+          <div v-if="isMobile" class="mobile-bottom-bar">
+            <el-button class="mobile-bar-btn" :icon="View" @click="exitEditMode">预览</el-button>
+            <el-button
+              type="primary"
+              class="mobile-bar-btn mobile-save-btn"
+              :icon="Check"
+              :loading="saving"
+              @click="saveNote"
+            >
+              <span>保存</span>
+            </el-button>
+            <el-popconfirm title="确定删除这个笔记吗？" @confirm="removeNote">
+              <template #reference>
+                <el-button class="mobile-bar-btn mobile-delete-btn" :icon="Delete"></el-button>
+              </template>
+            </el-popconfirm>
           </div>
         </div>
       </template>
@@ -876,9 +895,17 @@ html[data-theme="dark"] .clear-tag:hover {
   border-radius: 10px;
 }
 
+.editor-edit-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .editor-content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .editor-empty {
@@ -1356,8 +1383,16 @@ html[data-theme="dark"] .clear-tag:hover {
     flex: 1;
   }
 
+  .editor-edit-area {
+    padding-bottom: 60px;
+  }
+
   .editor-content {
     padding-bottom: 20px;
+  }
+
+  .editor-toolbar .action-buttons {
+    display: none;
   }
 
   .note-view {
@@ -1419,6 +1454,50 @@ html[data-theme="dark"] .clear-tag:hover {
     right: 20px;
     width: 52px;
     height: 52px;
+  }
+}
+
+/* 移动端底部固定操作栏 */
+.mobile-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+  z-index: 200;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-bar-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.mobile-save-btn {
+  flex: 2;
+  background: var(--gradient-primary);
+  border: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.mobile-delete-btn {
+  flex: 0 0 44px;
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-bar {
+    padding: 8px 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   }
 }
 </style>
