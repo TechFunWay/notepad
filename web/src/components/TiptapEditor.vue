@@ -265,6 +265,7 @@ function setColor(color) {
 .editor-content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 24px 32px;
 }
 
@@ -337,8 +338,10 @@ function setColor(color) {
 
 .editor-content :deep(.ProseMirror img) {
   max-width: 100%;
+  max-height: 90vh;
   height: auto;
   display: block;
   border-radius: 8px;
+  object-fit: contain;
 }
 </style>
