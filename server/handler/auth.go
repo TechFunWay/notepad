@@ -37,6 +37,15 @@ type forgotPasswordRequest struct {
 	NewPassword    string `json:"new_password" binding:"required,min=6"`
 }
 
+func GetSetupStatus(c *gin.Context) {
+	count, err := model.CountUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取用户状态失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"needs_setup": count == 0})
+}
+
 func Register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

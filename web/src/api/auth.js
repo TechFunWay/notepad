@@ -1,5 +1,9 @@
 import api from './request'
 
+export function getSetupStatus() {
+  return api.get('/auth/setup-status')
+}
+
 export function getSecurityQuestion(username) {
   return api.get('/auth/security-question', { params: { username } })
 }

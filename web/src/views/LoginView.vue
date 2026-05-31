@@ -113,6 +113,7 @@ import { Document, User, Lock, ArrowRight, EditPen, Tickets, Monitor } from '@el
 import { useAuthStore } from '@/stores/auth'
 import { useConfigStore } from '@/stores/config'
 import { md5 } from '@/utils/crypto'
+import { getSetupStatus } from '@/api/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -127,6 +128,14 @@ const form = reactive({
 })
 
 onMounted(async () => {
+  // 如果没有用户，跳转到管理员注册
+  try {
+    const { data } = await getSetupStatus()
+    if (data.needs_setup) {
+      router.replace('/register?setup=true')
+      return
+    }
+  } catch (e) {}
   await config.fetchPublicConfig()
   allowRegister.value = config.allowRegister
 
