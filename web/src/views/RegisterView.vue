@@ -8,15 +8,15 @@
             <div class="brand-icon">
               <el-icon :size="56"><EditPen /></el-icon>
             </div>
-            <h1 class="brand-title">创建账号</h1>
-            <p class="brand-desc">开始记录您的每一个灵感</p>
+            <h1 class="brand-title">{{ isSetup ? '设置管理员' : '创建账号' }}</h1>
+            <p class="brand-desc">{{ isSetup ? '首次使用，请设置管理员账号' : '开始记录您的每一个灵感' }}</p>
           </div>
           <div class="welcome-content">
             <div class="welcome-icon">
               <el-icon :size="80"><Star /></el-icon>
             </div>
-            <h3>加入我们</h3>
-            <p>创建一个账号，享受完整的笔记体验</p>
+            <h3>{{ isSetup ? '欢迎使用记事本' : '加入我们' }}</h3>
+            <p>{{ isSetup ? '设置管理员后即可开始使用' : '创建一个账号，享受完整的笔记体验' }}</p>
             <div class="benefits">
               <div class="benefit-item">
                 <el-icon><CircleCheck /></el-icon>
@@ -35,8 +35,8 @@
         </div>
         <div class="register-right">
           <div class="form-header">
-            <h2>开始注册</h2>
-            <p>只需几步即可完成注册</p>
+            <h2>{{ isSetup ? '设置管理员' : '开始注册' }}</h2>
+            <p>{{ isSetup ? '请设置管理员账号和密码' : '只需几步即可完成注册' }}</p>
           </div>
           <el-form :model="form" class="register-form" label-width="0" @submit.prevent>
             <el-form-item>
@@ -44,7 +44,7 @@
                 <el-icon class="input-icon"><User /></el-icon>
                 <el-input 
                   v-model="form.username" 
-                  placeholder="请输入用户名" 
+                  placeholder="请输入管理员用户名" 
                   size="large"
                   class="custom-input"
                   @keyup.enter="focusPassword"
@@ -57,7 +57,7 @@
                 <el-input 
                   v-model="form.password" 
                   type="password" 
-                  placeholder="请输入密码" 
+                  placeholder="请输入管理员密码" 
                   size="large"
                   show-password
                   class="custom-input"
@@ -113,12 +113,12 @@
                 :loading="loading" 
                 @click="handleRegister"
               >
-                <span>创建账号</span>
+                <span>{{ isSetup ? '设置管理员' : '创建账号' }}</span>
                 <el-icon><ArrowRight /></el-icon>
               </el-button>
             </el-form-item>
           </el-form>
-          <div class="form-footer">
+          <div class="form-footer" v-if="!isSetup">
             <div class="login-prompt">
               <span>已有账号？</span>
               <router-link to="/login" class="login-link">立即登录</router-link>
@@ -131,16 +131,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { message } from '@/utils/message'
 import { EditPen, User, Lock, QuestionFilled, Key, ArrowRight, Star, CircleCheck } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { md5 } from '@/utils/crypto'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const loading = ref(false)
+
+const isSetup = computed(() => route.query.setup === 'true')
 
 const form = reactive({
   username: '',
@@ -203,7 +206,7 @@ async function handleRegister() {
       security_question: form.security_question,
       security_answer: md5(form.security_answer)
     })
-    message.success('注册成功')
+    message.success(isSetup.value ? '管理员设置成功' : '注册成功')
     router.push('/')
   } catch (e) {
     message.error(e.response?.data?.error || '注册失败')
@@ -500,125 +503,7 @@ async function handleRegister() {
   }
 
   .register-right {
-    padding: 32px 24px;
-    justify-content: flex-start;
-    gap: 16px;
-  }
-
-  .form-header {
-    margin-bottom: 24px;
-  }
-
-  .register-form {
-    margin-bottom: 0;
-  }
-}
-
-@media (max-width: 480px) {
-  .register-wrapper {
-    padding: 0;
-    max-width: 100%;
-  }
-
-  .register-card {
-    border-radius: 0;
-    min-height: 100vh;
-    max-width: none;
-    width: 100%;
-  }
-
-  .register-container {
-    align-items: stretch;
-  }
-
-  .register-right {
-    padding: 24px 16px 16px;
-    gap: 0;
-    width: 100%;
-    box-sizing: border-box;
-    flex: 1;
-  }
-
-  .form-header {
-    margin-bottom: 20px;
-    width: 100%;
-  }
-
-  .form-header h2 {
-    font-size: 24px;
-  }
-
-  .form-header p {
-    font-size: 13px;
-  }
-
-  .register-form {
-    margin-bottom: 0;
-    width: 100%;
-  }
-
-  /* Force form items to be full-width block elements */
-  .register-form :deep(.el-form-item) {
-    margin-bottom: 10px;
-    display: block !important;
-    width: 100% !important;
-  }
-
-  .register-form :deep(.el-form-item:last-child) {
-    margin-bottom: 16px;
-  }
-
-  /* Remove label space completely */
-  .register-form :deep(.el-form-item__content) {
-    margin-left: 0 !important;
-    display: block !important;
-    width: 100% !important;
-  }
-
-  /* Target the actual input and button elements */
-  .register-form :deep(.el-form-item .el-input) {
-    width: 100% !important;
-  }
-
-  .register-form :deep(.el-form-item .el-input__wrapper) {
-    width: 100% !important;
-  }
-
-  .register-form :deep(.el-form-item .el-button) {
-    width: 100% !important;
-  }
-
-  .input-wrapper {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .custom-input {
-    width: 100%;
-  }
-
-  .custom-input :deep(.el-input) {
-    width: 100% !important;
-  }
-
-  .custom-input :deep(.el-input__wrapper) {
-    width: 100% !important;
-  }
-
-  .submit-btn {
-    margin-top: 0;
-    height: 48px;
-    width: 100% !important;
-  }
-
-  .form-footer {
-    margin-top: 12px;
-    padding-top: 0;
-    width: 100%;
-  }
-
-  .login-prompt {
-    font-size: 13px;
+    padding: 48px 32px;
   }
 }
 </style>

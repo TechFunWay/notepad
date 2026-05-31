@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { getSetupStatus } from '@/api/auth'
 
 const routes = [
   {
@@ -58,8 +59,21 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
+
+  // 首次访问检查：如果没有用户，跳转到管理员注册
+  if (to.path === '/login' || to.path === '/') {
+    try {
+      const { data } = await getSetupStatus()
+      if (data.needs_setup && to.path !== '/register') {
+        next('/register?setup=true')
+        return
+      }
+    } catch (e) {
+      // API 不可用时静默处理
+    }
+  }
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     next('/login')

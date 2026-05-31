@@ -26,6 +26,7 @@ func Setup(uploadDir string, webDir string) *gin.Engine {
 		// Public
 		api.POST("/auth/register", handler.Register)
 		api.POST("/auth/login", handler.Login)
+		api.GET("/auth/setup-status", handler.GetSetupStatus)
 		api.GET("/auth/security-question", handler.GetSecurityQuestion)
 		api.POST("/auth/verify-answer", handler.VerifyAnswer)
 		api.POST("/auth/forgot-password", handler.ForgotPassword)
