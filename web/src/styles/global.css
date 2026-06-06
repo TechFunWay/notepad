@@ -43,8 +43,8 @@ html, body, #app {
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -53,11 +53,19 @@ html, body, #app {
 
 ::-webkit-scrollbar-thumb {
   background: var(--text-muted);
-  border-radius: 3px;
+  border-radius: 5px;
+  border: 2px solid var(--bg-secondary);
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
+  background-clip: padding-box;
+}
+
+* {
+  scrollbar-color: var(--text-muted) transparent;
+  scrollbar-width: thin;
 }
 
 .fade-enter-active,

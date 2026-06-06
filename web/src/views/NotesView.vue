@@ -98,6 +98,14 @@
                 <span>笔记列表</span>
               </el-button>
               <h1 class="view-title">{{ currentNote.title || '无标题' }}</h1>
+              <el-button
+                class="view-edit-btn"
+                type="primary"
+                :icon="EditPen"
+                @click="enterEditMode"
+              >
+                <span>编辑</span>
+              </el-button>
             </div>
             <div class="view-meta">
               <span class="meta-item">
@@ -173,23 +181,6 @@
                   <el-option v-for="tag in allTags" :key="tag" :label="tag" :value="tag" />
                 </el-select>
               </div>
-              <div v-if="!isMobile" class="action-buttons">
-                <el-button :icon="View" @click="exitEditMode">预览</el-button>
-                <el-button
-                  type="primary"
-                  class="save-btn"
-                  :icon="Check"
-                  :loading="saving"
-                  @click="saveNote"
-                >
-                  <span>保存</span>
-                </el-button>
-                <el-popconfirm title="确定删除这个笔记吗？" @confirm="removeNote">
-                  <template #reference>
-                    <el-button class="delete-btn" :icon="Delete"></el-button>
-                  </template>
-                </el-popconfirm>
-              </div>
             </div>
           </div>
 
@@ -197,23 +188,26 @@
             <TiptapEditor v-model="currentNote.content" @update:model-value="markDirty" />
           </div>
 
-          <!-- 移动端底部固定操作栏 -->
-          <div v-if="isMobile" class="mobile-bottom-bar">
-            <el-button class="mobile-bar-btn" :icon="View" @click="exitEditMode">预览</el-button>
-            <el-button
-              type="primary"
-              class="mobile-bar-btn mobile-save-btn"
-              :icon="Check"
-              :loading="saving"
-              @click="saveNote"
-            >
-              <span>保存</span>
-            </el-button>
-            <el-popconfirm title="确定删除这个笔记吗？" @confirm="removeNote">
-              <template #reference>
-                <el-button class="mobile-bar-btn mobile-delete-btn" :icon="Delete"></el-button>
-              </template>
-            </el-popconfirm>
+          <!-- 底部操作栏(桌面 + 移动通用,内容多时无需滚回顶部) -->
+          <div class="editor-bottom-bar">
+            <span class="bar-word-count">{{ wordCount }} 字</span>
+            <div class="bar-actions">
+              <el-button class="bar-btn" :icon="View" @click="exitEditMode">预览</el-button>
+              <el-button
+                type="primary"
+                class="bar-btn bar-save-btn"
+                :icon="Check"
+                :loading="saving"
+                @click="saveNote"
+              >
+                <span>保存</span>
+              </el-button>
+              <el-popconfirm title="确定删除这个笔记吗？" @confirm="removeNote">
+                <template #reference>
+                  <el-button class="bar-btn bar-delete-btn" :icon="Delete"></el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </div>
         </div>
       </template>
@@ -258,7 +252,17 @@
               <div v-for="note in recentNotes" :key="note.id" class="recent-note-item" @click="selectNote(note)">
                 <div class="recent-note-title">{{ note.title || '无标题' }}</div>
                 <div class="recent-note-preview">{{ stripHtml(note.content) }}</div>
-                <div class="recent-note-time">{{ formatDate(note.updated_at) }}</div>
+                <div class="recent-note-footer">
+                  <div class="recent-note-time">{{ formatDate(note.updated_at) }}</div>
+                  <el-button
+                    class="recent-note-edit-btn"
+                    size="small"
+                    :icon="EditPen"
+                    @click.stop="quickEditNote(note)"
+                  >
+                    <span>编辑</span>
+                  </el-button>
+                </div>
               </div>
               <div v-if="recentNotes.length === 0" class="no-recent-notes">
                 <p>还没有笔记，点击上方按钮创建第一个笔记</p>
@@ -277,7 +281,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
 import { Plus, Check, Delete, Document, EditPen, ArrowLeft, FolderOpened, Notebook, Clock, Search, Tickets, Close, Calendar, Edit, View } from '@element-plus/icons-vue'
 import { getNotes, createNote, updateNote, deleteNote, getNote } from '@/api/note'
@@ -300,6 +304,12 @@ const isMobile = ref(false)
 const sidebarOpen = ref(false)
 const allTags = ref([])
 const activeTag = ref('')
+
+const wordCount = computed(() => {
+  const html = currentNote.value?.content || ''
+  // 去掉 HTML 标签,再去掉空白,剩余字符数即为"字数"
+  return html.replace(/<[^>]*>/g, '').replace(/\s/g, '').length
+})
 let searchTimer = null
 let autoSaveTimer = null
 const AUTO_SAVE_DELAY = 3000
@@ -483,6 +493,14 @@ function enterEditMode() {
   editMode.value = true
 }
 
+async function quickEditNote(note) {
+  await selectNote(note)
+  editMode.value = true
+  if (isMobile.value) {
+    sidebarOpen.value = false
+  }
+}
+
 async function exitEditMode() {
   if (isDirty.value) {
     clearTimeout(autoSaveTimer)
@@ -537,7 +555,7 @@ function formatFullDate(dateStr) {
 <style scoped>
 .notes-container {
   display: flex;
-  height: calc(100vh - 64px);
+  height: calc(100vh - 64px - 48px);
   position: relative;
   background: var(--bg-secondary);
 }
@@ -878,23 +896,6 @@ html[data-theme="dark"] .clear-tag:hover {
   min-width: 180px;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.save-btn {
-  border-radius: 10px;
-  font-weight: 600;
-  background: var(--gradient-primary);
-  border: none;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
-.delete-btn {
-  border-radius: 10px;
-}
-
 .editor-edit-area {
   flex: 1;
   display: flex;
@@ -1105,6 +1106,20 @@ html[data-theme="dark"] .clear-tag:hover {
   gap: 4px;
 }
 
+.recent-note-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.recent-note-edit-btn {
+  flex-shrink: 0;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
 .no-recent-notes {
   text-align: center;
   padding: 32px 16px;
@@ -1132,6 +1147,10 @@ html[data-theme="dark"] .clear-tag:hover {
 }
 
 .view-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg-primary);
   margin-bottom: 24px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--border-light);
@@ -1145,12 +1164,23 @@ html[data-theme="dark"] .clear-tag:hover {
 }
 
 .view-title {
+  flex: 1;
+  min-width: 0;
   font-size: 32px;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
   line-height: 1.3;
   word-break: break-word;
+}
+
+.view-edit-btn {
+  flex-shrink: 0;
+  border-radius: 10px;
+  font-weight: 600;
+  background: var(--gradient-primary);
+  border: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .view-meta {
@@ -1334,7 +1364,7 @@ html[data-theme="dark"] .clear-tag:hover {
 
 @media (max-width: 768px) {
   .notes-container {
-    height: calc(100vh - 56px);
+    height: calc(100vh - 56px - 16px);
   }
 
   .notes-sidebar {
@@ -1375,24 +1405,8 @@ html[data-theme="dark"] .clear-tag:hover {
     padding-right: 4px;
   }
 
-  .action-buttons {
-    flex-shrink: 0;
-  }
-
   .tags-select {
     flex: 1;
-  }
-
-  .editor-edit-area {
-    padding-bottom: 60px;
-  }
-
-  .editor-content {
-    padding-bottom: 20px;
-  }
-
-  .editor-toolbar .action-buttons {
-    display: none;
   }
 
   .note-view {
@@ -1401,6 +1415,17 @@ html[data-theme="dark"] .clear-tag:hover {
 
   .view-title {
     font-size: 24px;
+  }
+
+  .view-title-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .view-edit-btn {
+    font-size: 13px;
+    padding: 6px 14px;
+    height: 32px;
   }
 
   .view-meta {
@@ -1457,24 +1482,39 @@ html[data-theme="dark"] .clear-tag:hover {
   }
 }
 
-/* 移动端底部固定操作栏 */
-.mobile-bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+/* 底部操作栏(桌面 + 移动通用) */
+.editor-bottom-bar {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   padding: 8px 16px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   background: var(--bg-primary);
   border-top: 1px solid var(--border-color);
-  z-index: 200;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
 }
 
-.mobile-bar-btn {
+.bar-word-count {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.bar-btn {
   flex: 1;
   height: 44px;
   border-radius: 10px;
@@ -1482,22 +1522,24 @@ html[data-theme="dark"] .clear-tag:hover {
   font-size: 15px;
 }
 
-.mobile-save-btn {
+.bar-save-btn {
   flex: 2;
   background: var(--gradient-primary);
   border: none;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
-.mobile-delete-btn {
+.bar-delete-btn {
   flex: 0 0 44px;
   padding: 0;
 }
 
 @media (max-width: 768px) {
-  .mobile-bottom-bar {
+  .editor-bottom-bar {
     padding: 8px 12px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  .bar-word-count {
+    font-size: 12px;
   }
 }
 </style>
