@@ -5,7 +5,7 @@ LDFLAGS := -s -w -X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X m
 DOCKER_REPO := techfunways/notepad
 OUTPUT_DIR := release/$(VERSION)
 
-.PHONY: all clean web server build cross-compile docker build-fpk dev-server dev-web dev
+.PHONY: all clean web server build cross-compile docker build-fpk dev-server dev-web dev serve stop
 
 all: clean build
 
@@ -70,3 +70,24 @@ build-fpk:
 	./scripts/build-all.sh
 	./scripts/build-fnpack.sh
 	@echo "==> FPK package complete"
+
+serve:
+	@echo "==> Building frontend..."
+	cd web && npm run build
+	@echo "==> Copying frontend assets to server/static/dist..."
+	rm -rf server/static/dist
+	cp -r web/dist server/static/dist
+	@echo "==> Stopping any existing service on port 8904..."
+	@lsof -t -i :8904 | xargs kill -9 2>/dev/null || true
+	@echo "==> Building backend binary..."
+	cd server && CGO_ENABLED=0 go build -o /tmp/notepad-server .
+	@echo "==> Starting backend in background..."
+	@nohup /tmp/notepad-server </dev/null >/tmp/notepad-server.log 2>&1 & disown
+	@sleep 2
+	@echo "==> Server started. PID: $$(lsof -t -i :8904 2>/dev/null | head -1)"
+	@echo "==> Logs: /tmp/notepad-server.log"
+	@echo "==> Visit http://localhost:8904"
+
+stop:
+	@echo "==> Stopping service on port 8904..."
+	@lsof -t -i :8904 | xargs kill -9 2>/dev/null || echo "==> No service running on 8904"
