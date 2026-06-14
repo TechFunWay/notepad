@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/gin-gonic/gin"
 	"notepad/auth"
 	"notepad/config"
 	"notepad/database"
@@ -39,7 +40,9 @@ func StartServer(port int, dataDir, webDir, uploadDir, shareDirs string) {
 
 	handler.SetUploadDir(uploadPath)
 
+	gin.SetMode(gin.ReleaseMode)
 	r := router.Setup(uploadPath, cfg.WebDir)
+	fmt.Printf("记事本已启动，访问地址：http://0.0.0.0:%d\n", cfg.Port)
 	r.Run(fmt.Sprintf(":%d", cfg.Port))
 }
 
