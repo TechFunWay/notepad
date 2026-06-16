@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -80,38 +81,61 @@ func Setup(uploadDir string, webDir string) *gin.Engine {
 		}
 	}
 
+	// fileExists 判断请求的静态文件是否真实存在
+	fileExists := func(reqPath string) bool {
+		if useWebDir {
+			if _, err := os.Stat(webDir + reqPath); err == nil {
+				return true
+			}
+			return false
+		}
+		distDir := "./static/dist"
+		if _, err := os.Stat(distDir); err == nil {
+			if _, err := os.Stat(distDir + reqPath); err == nil {
+				return true
+			}
+			return false
+		}
+		if distFS, err := fs.Sub(static.StaticFS, "dist"); err == nil {
+			if f, err := distFS.Open(strings.TrimPrefix(reqPath, "/")); err == nil {
+				f.Close()
+				return true
+			}
+		}
+		return false
+	}
+
 	if fileServer != nil {
 		r.NoRoute(func(c *gin.Context) {
-			path := c.Request.URL.Path
-			if strings.HasPrefix(path, "/api") {
+			reqPath := c.Request.URL.Path
+			if strings.HasPrefix(reqPath, "/api") {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 				return
 			}
 
-			if useWebDir {
-				if _, err := os.Stat(webDir + path); err == nil {
-					fileServer.ServeHTTP(c.Writer, c.Request)
-					return
-				}
-			} else {
-				distDir := "./static/dist"
-				if _, err := os.Stat(distDir); err == nil {
-					if _, err := os.Stat(distDir + path); err == nil {
-						fileServer.ServeHTTP(c.Writer, c.Request)
-						return
-					}
+			// 命中真实存在的静态文件
+			if fileExists(reqPath) {
+				if strings.HasPrefix(reqPath, "/assets/") {
+					// 文件名带内容 hash，内容变更必然换名，可长期强缓存
+					c.Header("Cache-Control", "public, max-age=31536000, immutable")
 				} else {
-					distFS, err := fs.Sub(static.StaticFS, "dist")
-					if err == nil {
-						if _, err := distFS.Open(strings.TrimPrefix(path, "/")); err == nil {
-							fileServer.ServeHTTP(c.Writer, c.Request)
-							return
-						}
-					}
+					// 其它根目录文件（favicon 等）每次回源校验
+					c.Header("Cache-Control", "no-cache")
 				}
+				fileServer.ServeHTTP(c.Writer, c.Request)
+				return
 			}
 
-			// SPA fallback: serve index.html
+			// 文件不存在且是带扩展名的静态资源请求（如升级后已不存在的旧 hash 文件）：
+			// 返回 404，绝不回退 index.html，否则浏览器会把 HTML 当作 JS/CSS 执行导致白屏
+			if path.Ext(reqPath) != "" {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+				return
+			}
+
+			// SPA 前端路由（如 /login、/notes-list）：回退 index.html
+			// 入口文件禁止缓存，确保升级后浏览器总能拿到最新的资源引用，避免白屏
+			c.Header("Cache-Control", "no-cache")
 			c.Request.URL.Path = "/"
 			fileServer.ServeHTTP(c.Writer, c.Request)
 		})
