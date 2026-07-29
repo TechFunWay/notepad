@@ -6,25 +6,27 @@
           <div class="avatar">
             <el-icon :size="32"><UserFilled /></el-icon>
           </div>
-          <h2>个人设置</h2>
+          <h1>个人设置</h1>
         </div>
         <div class="menu-list">
-          <div 
+          <button
+            type="button"
             class="menu-item" 
             :class="{ active: activeTab === 'password' }"
             @click="activeTab = 'password'"
           >
             <el-icon><Key /></el-icon>
             <span>密码修改</span>
-          </div>
-          <div 
+          </button>
+          <button
+            type="button"
             class="menu-item" 
             :class="{ active: activeTab === 'security' }"
             @click="activeTab = 'security'"
           >
             <el-icon><QuestionFilled /></el-icon>
             <span>安全问题</span>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -303,7 +305,7 @@ async function handleSecurityChange() {
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
 }
 
-.sidebar-header h2 {
+.sidebar-header h1 {
   font-size: 16px;
   font-weight: 600;
   color: #1f2937;
@@ -464,7 +466,7 @@ async function handleSecurityChange() {
     margin-bottom: 8px;
   }
 
-  .sidebar-header h2 {
+  .sidebar-header h1 {
     font-size: 15px;
   }
 

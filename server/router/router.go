@@ -44,6 +44,8 @@ func Setup(uploadDir string, webDir string) *gin.Engine {
 		auth.GET("/notes", handler.ListNotes)
 		auth.POST("/notes", handler.CreateNote)
 		auth.GET("/notes/tags", handler.GetAllTags)
+		auth.PUT("/notes/tags", handler.RenameTag)
+		auth.DELETE("/notes/tags", handler.DeleteTag)
 		auth.GET("/notes/:id", handler.GetNote)
 		auth.PUT("/notes/:id", handler.UpdateNote)
 		auth.DELETE("/notes/:id", handler.DeleteNote)

@@ -1,79 +1,191 @@
 <template>
-  <div class="main-layout">
-    <el-container class="layout-container">
-      <el-header class="header">
-        <div class="header-inner">
-          <div class="header-left">
-            <router-link to="/notes-list" class="logo">
-              <div class="logo-icon">
-                <el-icon><Document /></el-icon>
-              </div>
-              <span class="logo-text">记事本</span>
-            </router-link>
-            <span class="version">{{ version }}</span>
-          </div>
-          <div class="header-right">
-            <el-tooltip :content="isDark ? '切换亮色模式' : '切换暗色模式'" placement="bottom">
-              <button class="theme-toggle" @click="toggleTheme">
-                <el-icon><template v-if="isDark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></template><template v-else><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></template></el-icon>
-              </button>
-            </el-tooltip>
-            <el-dropdown trigger="click" class="user-dropdown">
-              <div class="user-info">
-                <div class="user-avatar">
-                  {{ user?.username?.charAt(0)?.toUpperCase() || 'U' }}
-                </div>
-                <span class="user-name">{{ user?.username }}</span>
-                <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
-              </div>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <router-link to="/profile">
-                    <el-dropdown-item>
-                      <el-icon><User /></el-icon>
-                      <span>个人中心</span>
-                    </el-dropdown-item>
-                  </router-link>
-                  <template v-if="user?.role === 'admin'">
-                    <router-link to="/admin/users">
-                      <el-dropdown-item divided>
-                        <el-icon><UserFilled /></el-icon>
-                        <span>用户管理</span>
-                      </el-dropdown-item>
-                    </router-link>
-                  </template>
-                  <el-dropdown-item divided @click="handleLogout">
-                    <el-icon><SwitchButton /></el-icon>
-                    <span>退出登录</span>
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-        </div>
-      </el-header>
-      <el-main class="main-content">
-        <router-view />
-      </el-main>
-    </el-container>
+  <div class="app-shell" :class="{ 'immersive-mode': immersiveMode }">
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+
+    <aside class="app-sidebar" aria-label="主导航">
+      <router-link to="/notes-list" class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-letter">N</span>
+        </span>
+        <span class="brand-copy">
+          <strong>记事本</strong>
+          <small>灵感与知识工作台</small>
+        </span>
+      </router-link>
+
+      <nav class="primary-nav">
+        <p class="nav-label">工作空间</p>
+        <router-link
+          v-for="item in mainNav"
+          :key="item.to"
+          :to="item.to"
+          class="nav-item"
+          :class="{ active: isActive(item) }"
+        >
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span>{{ item.label }}</span>
+        </router-link>
+
+        <template v-if="user?.role === 'admin'">
+          <p class="nav-label nav-label-admin">系统管理</p>
+          <router-link
+            v-for="item in adminNav"
+            :key="item.to"
+            :to="item.to"
+            class="nav-item"
+            :class="{ active: isActive(item) }"
+          >
+            <el-icon><component :is="item.icon" /></el-icon>
+            <span>{{ item.label }}</span>
+          </router-link>
+        </template>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button
+          class="theme-control"
+          type="button"
+          :aria-label="isDark ? '切换亮色模式' : '切换暗色模式'"
+          @click="toggleTheme"
+        >
+          <el-icon><Sunny v-if="isDark" /><Moon v-else /></el-icon>
+          <span>{{ isDark ? '亮色模式' : '暗色模式' }}</span>
+        </button>
+
+        <el-dropdown trigger="click" placement="top-start" class="account-dropdown">
+          <button class="account-card" type="button" aria-label="打开账号菜单">
+            <span class="user-avatar">{{ userInitial }}</span>
+            <span class="account-copy">
+              <strong>{{ user?.username || '用户' }}</strong>
+              <small>{{ user?.role === 'admin' ? '管理员' : '个人账号' }}</small>
+            </span>
+            <el-icon class="account-more"><MoreFilled /></el-icon>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="router.push('/profile')">
+                <el-icon><User /></el-icon>
+                个人设置
+              </el-dropdown-item>
+              <el-dropdown-item divided @click="handleLogout">
+                <el-icon><SwitchButton /></el-icon>
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
+        <span class="version">Notepad {{ version }}</span>
+      </div>
+    </aside>
+
+    <header v-if="!immersiveMode" class="mobile-header">
+      <router-link to="/notes-list" class="mobile-brand">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-letter">N</span>
+        </span>
+        <span>记事本</span>
+      </router-link>
+      <div class="mobile-actions">
+        <button
+          class="icon-control"
+          type="button"
+          :aria-label="isDark ? '切换亮色模式' : '切换暗色模式'"
+          @click="toggleTheme"
+        >
+          <el-icon><Sunny v-if="isDark" /><Moon v-else /></el-icon>
+        </button>
+        <router-link to="/profile" class="mobile-avatar" aria-label="个人设置">
+          {{ userInitial }}
+        </router-link>
+      </div>
+    </header>
+
+    <main id="main-content" class="app-content" tabindex="-1">
+      <router-view v-slot="{ Component }">
+        <transition name="page-fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
+    </main>
+
+    <nav v-if="!immersiveMode" class="mobile-nav" aria-label="移动端主导航">
+      <router-link
+        v-for="item in mobileNav"
+        :key="item.to"
+        :to="item.to"
+        class="mobile-nav-item"
+        :class="{ active: isActive(item) }"
+      >
+        <span class="mobile-nav-icon">
+          <el-icon><component :is="item.icon" /></el-icon>
+        </span>
+        <span>{{ item.shortLabel || item.label }}</span>
+      </router-link>
+    </nav>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { message } from '@/utils/message'
-import { Document, User, SwitchButton, Setting, UserFilled, Tools, ArrowDown } from '@element-plus/icons-vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import {
+  Collection,
+  EditPen,
+  MoreFilled,
+  Moon,
+  Setting,
+  Sunny,
+  SwitchButton,
+  User,
+  UserFilled
+} from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
-const { isDark, toggleTheme } = useTheme()
+import { message } from '@/utils/message'
 import api from '@/api/request'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
+const { isDark, toggleTheme } = useTheme()
 
 const user = computed(() => auth.user)
+const userInitial = computed(() => user.value?.username?.charAt(0)?.toUpperCase() || 'U')
 const version = ref('1.0.0')
+
+const mainNav = [
+  { to: '/', label: '写作工作台', shortLabel: '写作', icon: EditPen, exact: true },
+  { to: '/notes-list', label: '全部笔记', shortLabel: '笔记', icon: Collection },
+  { to: '/profile', label: '个人设置', shortLabel: '我的', icon: User }
+]
+
+const adminNav = [
+  { to: '/admin/users', label: '用户管理', shortLabel: '用户', icon: UserFilled },
+  { to: '/admin/configs', label: '系统配置', shortLabel: '设置', icon: Setting }
+]
+
+const mobileNav = computed(() => {
+  const items = [mainNav[0], mainNav[1]]
+  if (user.value?.role === 'admin') {
+    items.push({
+      to: '/admin/users',
+      label: '管理',
+      shortLabel: '管理',
+      icon: Setting,
+      matchPrefix: '/admin'
+    })
+  }
+  items.push(mainNav[2])
+  return items
+})
+
+function isActive(item) {
+  if (item.matchPrefix) return route.path.startsWith(item.matchPrefix)
+  return item.exact ? route.path === item.to : route.path.startsWith(item.to)
+}
+
+const immersiveMode = computed(() => route.path === '/' && Boolean(route.query.note_id))
 
 async function fetchVersion() {
   try {
@@ -86,8 +198,8 @@ async function fetchVersion() {
 
 async function handleLogout() {
   const confirmed = await message.confirm('确定要退出登录吗？', {
-    title: '提示',
-    confirmButtonText: '确定',
+    title: '退出登录',
+    confirmButtonText: '退出',
     cancelButtonText: '取消',
     type: 'warning'
   })
@@ -96,242 +208,410 @@ async function handleLogout() {
   window.location.href = '/login'
 }
 
-onMounted(() => {
-  fetchVersion()
-})
+onMounted(fetchVersion)
 
-onUnmounted(() => {
-})
+watch(
+  () => route.fullPath,
+  async () => {
+    await nextTick()
+    document.getElementById('main-content')?.focus({ preventScroll: true })
+  }
+)
 </script>
 
 <style scoped>
-.main-layout {
-  min-height: 100vh;
+.app-shell {
+  min-height: 100dvh;
   background: var(--bg-secondary);
 }
 
-.layout-container {
-  min-height: 100vh;
+#main-content:focus {
+  outline: none;
 }
 
-.header {
-  background: var(--header-gradient);
-  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.15);
-  padding: 0;
-  height: 64px;
-  position: sticky;
-  top: 0;
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 300;
+  padding: 10px 14px;
+  color: #fff;
+  background: var(--primary-color);
+  border-radius: 10px;
+  transform: translateY(-160%);
+  transition: transform 180ms ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.app-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
   z-index: 100;
+  width: var(--app-sidebar-width);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 16px 16px;
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  background: color-mix(in srgb, var(--bg-primary) 92%, transparent);
+  border-right: 1px solid var(--border-color);
+  box-shadow: 10px 0 35px rgba(8, 51, 68, 0.035);
+  backdrop-filter: blur(20px);
 }
 
-.header-inner {
-  height: 100%;
+.brand,
+.mobile-brand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  color: var(--text-primary);
   text-decoration: none;
-  color: white;
-  transition: transform 0.2s;
 }
 
-.logo:hover {
-  transform: scale(1.02);
+.brand {
+  gap: 12px;
+  padding: 2px 8px 24px;
 }
 
-.logo-icon {
-  width: 44px;
-  height: 44px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--gradient-primary);
+  border-radius: 13px;
+  box-shadow: 0 9px 20px rgba(8, 145, 178, 0.22);
+}
+
+.brand-mark .el-icon {
+  font-size: 21px;
+}
+
+.brand-copy {
+  min-width: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.logo-icon .el-icon {
-  font-size: 24px;
+.brand-copy strong {
+  font-size: 18px;
+  letter-spacing: -0.02em;
 }
 
-.logo-text {
-  font-size: 20px;
+.brand-copy small,
+.account-copy small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.primary-nav {
+  flex: 1;
+}
+
+.nav-label {
+  margin: 12px 12px 8px;
+  color: var(--text-muted);
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: 0.12em;
 }
 
-.header-right {
+.nav-label-admin {
+  margin-top: 26px;
+}
+
+.nav-item,
+.theme-control {
+  min-height: 46px;
   display: flex;
   align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0 13px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.nav-item + .nav-item {
+  margin-top: 4px;
+}
+
+.nav-item .el-icon,
+.theme-control .el-icon {
+  flex: 0 0 20px;
+  font-size: 19px;
+}
+
+.nav-item:hover,
+.theme-control:hover {
+  color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.nav-item.active {
+  color: var(--primary-strong);
+  background: var(--primary-light);
+  box-shadow: inset 3px 0 0 var(--primary-color);
+}
+
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.theme-toggle {
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+.account-dropdown {
+  width: 100%;
 }
 
-.theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
-}
-
-.theme-toggle .el-icon {
-  font-size: 20px;
-}
-
-.user-dropdown {
-  cursor: pointer;
-}
-
-.user-info {
+.account-card {
+  width: 100%;
+  min-height: 62px;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  transition: all 0.2s;
+  padding: 9px;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 180ms ease, background 180ms ease;
 }
 
-.user-info:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
+.account-card:hover {
+  background: var(--bg-primary);
+  border-color: var(--border-strong);
+}
+
+.user-avatar,
+.mobile-avatar {
+  display: grid;
+  place-items: center;
+  color: var(--primary-strong);
+  background: var(--primary-light);
+  border: 1px solid var(--border-color);
+  border-color: color-mix(in srgb, var(--primary-color) 24%, transparent);
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 11px;
+}
+
+.account-copy {
+  min-width: 0;
+  flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 700;
-  color: #667eea;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.user-name {
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
+.account-copy strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.dropdown-icon {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-}
-
-.el-dropdown-menu :deep(.el-dropdown-menu__item a) {
-  color: inherit;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.el-dropdown-menu :deep(.el-dropdown-menu__item) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.main-content {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-  min-height: calc(100vh - 64px);
-}
-
-@media (max-width: 768px) {
-  .header {
-    height: 56px;
-  }
-
-  .header-inner {
-    padding: 0 16px;
-  }
-
-  .logo-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-  }
-
-  .logo-icon .el-icon {
-    font-size: 20px;
-  }
-
-  .logo-text {
-    font-size: 17px;
-  }
-
-  .user-info {
-    padding: 6px 12px;
-    border-radius: 10px;
-  }
-
-  .user-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    font-size: 14px;
-  }
-
-  .user-name {
-    max-width: 60px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 13px;
-  }
-
-  .main-content {
-    padding: 8px;
-  }
+.account-more {
+  color: var(--text-muted);
 }
 
 .version {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  padding: 2px 10px;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.app-content {
+  min-width: 0;
+  min-height: 100dvh;
+  margin-left: var(--app-sidebar-width);
+  padding: 20px;
+}
+
+.mobile-header,
+.mobile-nav {
+  display: none;
+}
+
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+}
+
+@media (max-width: 1120px) and (min-width: 769px) {
+  .app-sidebar {
+    align-items: center;
+    padding-inline: 12px;
+  }
+
+  .brand {
+    padding-inline: 0;
+  }
+
+  .brand-copy,
+  .nav-label,
+  .nav-item span,
+  .theme-control span,
+  .account-copy,
+  .account-more,
+  .version {
+    display: none;
+  }
+
+  .nav-item,
+  .theme-control {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .account-card {
+    min-height: 54px;
+    justify-content: center;
+    padding: 7px;
+  }
 }
 
 @media (max-width: 768px) {
-  .version {
-    font-size: 10px;
-    padding: 2px 8px;
+  .app-shell {
+    padding: calc(60px + env(safe-area-inset-top, 0px)) 0 calc(70px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-sidebar {
+    display: none;
+  }
+
+  .mobile-header {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 100;
+    height: calc(60px + env(safe-area-inset-top, 0px));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: env(safe-area-inset-top, 0px) 16px 0;
+    background: var(--surface-elevated);
+    background: color-mix(in srgb, var(--bg-primary) 90%, transparent);
+    border-bottom: 1px solid var(--border-color);
+    backdrop-filter: blur(20px);
+  }
+
+  .mobile-brand {
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  .mobile-brand .brand-mark {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 10px;
+  }
+
+  .mobile-brand .brand-mark .el-icon {
+    font-size: 18px;
+  }
+
+  .mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .icon-control,
+  .mobile-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  .icon-control {
+    display: grid;
+    place-items: center;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .mobile-avatar {
+    text-decoration: none;
+  }
+
+  .app-content {
+    min-height: calc(100dvh - 130px);
+    margin-left: 0;
+    padding: 10px;
+  }
+
+  .mobile-nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 100;
+    height: calc(70px + env(safe-area-inset-bottom, 0px));
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    padding: 6px 10px env(safe-area-inset-bottom, 0px);
+    background: var(--surface-elevated);
+    background: color-mix(in srgb, var(--bg-primary) 94%, transparent);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -10px 30px rgba(8, 51, 68, 0.06);
+    backdrop-filter: blur(20px);
+  }
+
+  .mobile-nav-item {
+    min-width: 0;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--text-muted);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .mobile-nav-item .el-icon {
+    font-size: 20px;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--primary-strong);
+    background: var(--primary-light);
   }
 }
 </style>

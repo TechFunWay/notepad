@@ -24,6 +24,19 @@ export function getTags() {
   return api.get('/notes/tags')
 }
 
+export function renameTag(oldName, newName) {
+  return api.put('/notes/tags', {
+    old_name: oldName,
+    new_name: newName
+  })
+}
+
+export function deleteTag(name) {
+  return api.delete('/notes/tags', {
+    data: { name }
+  })
+}
+
 export function uploadImage(file) {
   const formData = new FormData()
   formData.append('file', file)

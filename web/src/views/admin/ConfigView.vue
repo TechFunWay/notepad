@@ -1,8 +1,17 @@
 <template>
   <div class="admin-container">
     <div class="admin-header">
-      <h2>系统配置</h2>
+      <div>
+        <span class="page-eyebrow">SYSTEM</span>
+        <h1>系统配置</h1>
+        <p class="page-description">调整注册策略与应用级运行参数</p>
+      </div>
     </div>
+
+    <nav class="admin-tabs" aria-label="管理页面">
+      <router-link to="/admin/users">用户</router-link>
+      <router-link to="/admin/configs">系统配置</router-link>
+    </nav>
 
     <!-- Desktop table -->
     <el-table v-if="!isMobile" :data="configs" stripe style="width: 100%">
@@ -129,7 +138,7 @@ async function handleEdit() {
   margin-bottom: 20px;
 }
 
-.admin-header h2 {
+.admin-header h1 {
   margin: 0;
 }
 
@@ -184,7 +193,7 @@ async function handleEdit() {
     padding: 16px;
   }
 
-  .admin-header h2 {
+  .admin-header h1 {
     font-size: 18px;
   }
 }

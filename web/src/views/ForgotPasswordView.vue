@@ -1,7 +1,11 @@
 <template>
   <div class="auth-container">
     <div class="auth-card">
-      <h2>找回密码</h2>
+      <div class="form-brand-mobile auth-brand" aria-hidden="true">
+        <span class="form-brand-mark"><el-icon><Document /></el-icon></span>
+        <span>记事本</span>
+      </div>
+      <h1>找回密码</h1>
       <p class="subtitle">通过安全问题重置密码</p>
 
       <el-steps :active="step" finish-status="success" style="margin-bottom: 30px">
@@ -12,7 +16,8 @@
 
       <el-form v-if="step === 0" :model="form" @submit.prevent>
         <el-form-item>
-          <el-input ref="usernameInput" v-model="form.username" placeholder="请输入用户名" prefix-icon="User" size="large" @keyup.enter="checkUsername" />
+          <label class="auth-label" for="forgot-username">用户名</label>
+          <el-input id="forgot-username" ref="usernameInput" v-model="form.username" placeholder="请输入用户名" aria-label="用户名" autocomplete="username" prefix-icon="User" size="large" @keyup.enter="checkUsername" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" @click="checkUsername" @keyup.enter="checkUsername" size="large" style="width: 100%">下一步</el-button>
@@ -25,7 +30,8 @@
           <span>{{ securityQuestion }}</span>
         </div>
         <el-form-item>
-          <el-input ref="answerInput" v-model="form.security_answer" placeholder="请输入安全答案" size="large" @keyup.enter="verifyAnswer" />
+          <label class="auth-label" for="forgot-answer">安全答案</label>
+          <el-input id="forgot-answer" ref="answerInput" v-model="form.security_answer" placeholder="请输入安全答案" aria-label="安全答案" autocomplete="off" size="large" @keyup.enter="verifyAnswer" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" @click="verifyAnswer" size="large" style="width: 100%">下一步</el-button>
@@ -34,10 +40,12 @@
 
       <el-form v-else :model="form" @submit.prevent>
         <el-form-item>
-          <el-input ref="passwordInput" v-model="form.new_password" type="password" placeholder="新密码（至少6位）" prefix-icon="Lock" size="large" show-password @keyup.enter="handlePasswordEnter" />
+          <label class="auth-label" for="forgot-password">新密码</label>
+          <el-input id="forgot-password" ref="passwordInput" v-model="form.new_password" type="password" placeholder="新密码（至少6位）" aria-label="新密码" autocomplete="new-password" prefix-icon="Lock" size="large" show-password @keyup.enter="handlePasswordEnter" />
         </el-form-item>
         <el-form-item>
-          <el-input v-model="form.confirm_password" type="password" placeholder="请再次输入新密码" prefix-icon="Lock" size="large" show-password @keyup.enter="resetPassword" />
+          <label class="auth-label" for="forgot-password-confirm">确认新密码</label>
+          <el-input id="forgot-password-confirm" v-model="form.confirm_password" type="password" placeholder="请再次输入新密码" aria-label="确认新密码" autocomplete="new-password" prefix-icon="Lock" size="large" show-password @keyup.enter="resetPassword" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" @click="resetPassword" size="large" style="width: 100%">重置密码</el-button>
@@ -178,10 +186,11 @@ async function resetPassword() {
   box-shadow: var(--card-shadow);
 }
 
-.auth-card h2 {
+.auth-card h1 {
   text-align: center;
   margin-bottom: 8px;
   color: var(--text-primary);
+  font-size: 28px;
 }
 
 .auth-card .subtitle {

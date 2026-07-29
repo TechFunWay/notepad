@@ -42,29 +42,41 @@
           </div>
         </div>
         <div class="login-right">
+          <div class="form-brand-mobile" aria-hidden="true">
+            <span class="form-brand-mark"><el-icon><Document /></el-icon></span>
+            <span>记事本</span>
+          </div>
           <div class="form-header">
             <h2>欢迎回来</h2>
             <p>登录您的账号继续使用</p>
           </div>
           <div class="login-form">
             <div class="form-item" style="margin-bottom: 20px">
+              <label class="auth-label" for="login-username">用户名</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><User /></el-icon>
                 <el-input 
+                  id="login-username"
                   v-model="form.username" 
                   placeholder="请输入用户名" 
+                  aria-label="用户名"
+                  autocomplete="username"
                   size="large"
                   class="custom-input"
                 />
               </div>
             </div>
             <div class="form-item" style="margin-bottom: 24px">
+              <label class="auth-label" for="login-password">密码</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><Lock /></el-icon>
                 <el-input 
+                  id="login-password"
                   v-model="form.password" 
                   type="password" 
                   placeholder="请输入密码" 
+                  aria-label="密码"
+                  autocomplete="current-password"
                   size="large"
                   show-password
                   class="custom-input"
@@ -113,7 +125,6 @@ import { Document, User, Lock, ArrowRight, EditPen, Tickets, Monitor } from '@el
 import { useAuthStore } from '@/stores/auth'
 import { useConfigStore } from '@/stores/config'
 import { md5 } from '@/utils/crypto'
-import { getSetupStatus } from '@/api/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -128,14 +139,6 @@ const form = reactive({
 })
 
 onMounted(async () => {
-  // 如果没有用户，跳转到管理员注册
-  try {
-    const { data } = await getSetupStatus()
-    if (data.needs_setup) {
-      router.replace('/register?setup=true')
-      return
-    }
-  } catch (e) {}
   await config.fetchPublicConfig()
   allowRegister.value = config.allowRegister
 

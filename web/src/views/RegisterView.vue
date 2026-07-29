@@ -34,17 +34,25 @@
           </div>
         </div>
         <div class="register-right">
+          <div class="form-brand-mobile" aria-hidden="true">
+            <span class="form-brand-mark"><el-icon><EditPen /></el-icon></span>
+            <span>记事本</span>
+          </div>
           <div class="form-header">
             <h2>{{ isSetup ? '设置管理员' : '开始注册' }}</h2>
             <p>{{ isSetup ? '请设置管理员账号和密码' : '只需几步即可完成注册' }}</p>
           </div>
           <el-form :model="form" class="register-form" label-width="0" @submit.prevent>
             <el-form-item>
+              <label class="auth-label" for="register-username">用户名</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><User /></el-icon>
                 <el-input 
+                  id="register-username"
                   v-model="form.username" 
                   placeholder="请输入管理员用户名" 
+                  aria-label="用户名"
+                  autocomplete="username"
                   size="large"
                   class="custom-input"
                   @keyup.enter="focusPassword"
@@ -52,12 +60,16 @@
               </div>
             </el-form-item>
             <el-form-item>
+              <label class="auth-label" for="register-password">密码</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><Lock /></el-icon>
                 <el-input 
+                  id="register-password"
                   v-model="form.password" 
                   type="password" 
                   placeholder="请输入管理员密码" 
+                  aria-label="密码"
+                  autocomplete="new-password"
                   size="large"
                   show-password
                   class="custom-input"
@@ -66,12 +78,16 @@
               </div>
             </el-form-item>
             <el-form-item>
+              <label class="auth-label" for="register-password-confirm">确认密码</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><Lock /></el-icon>
                 <el-input 
+                  id="register-password-confirm"
                   v-model="form.password_confirm" 
                   type="password" 
                   placeholder="请再次输入密码" 
+                  aria-label="确认密码"
+                  autocomplete="new-password"
                   size="large"
                   show-password
                   class="custom-input"
@@ -80,11 +96,14 @@
               </div>
             </el-form-item>
             <el-form-item>
+              <label class="auth-label" for="register-question">安全问题</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><QuestionFilled /></el-icon>
                 <el-input 
+                  id="register-question"
                   v-model="form.security_question" 
                   placeholder="安全问题（用于找回密码）" 
+                  aria-label="安全问题"
                   size="large"
                   class="custom-input"
                   @keyup.enter="focusSecurityAnswer"
@@ -92,12 +111,16 @@
               </div>
             </el-form-item>
             <el-form-item>
+              <label class="auth-label" for="register-answer">安全答案</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><Key /></el-icon>
                 <el-input 
+                  id="register-answer"
                   v-model="form.security_answer" 
                   type="password" 
                   placeholder="安全答案" 
+                  aria-label="安全答案"
+                  autocomplete="off"
                   size="large"
                   show-password
                   class="custom-input"
@@ -137,6 +160,7 @@ import { message } from '@/utils/message'
 import { EditPen, User, Lock, QuestionFilled, Key, ArrowRight, Star, CircleCheck } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { md5 } from '@/utils/crypto'
+import { markSetupComplete } from '@/utils/setupStatus'
 
 const route = useRoute()
 const router = useRouter()
@@ -206,6 +230,7 @@ async function handleRegister() {
       security_question: form.security_question,
       security_answer: md5(form.security_answer)
     })
+    if (isSetup.value) markSetupComplete()
     message.success(isSetup.value ? '管理员设置成功' : '注册成功')
     router.push('/')
   } catch (e) {

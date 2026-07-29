@@ -2,10 +2,13 @@
   <div class="notes-list-container">
     <div class="notes-list-header">
       <div class="header-left">
-        <h1 class="page-title">
-          <el-icon><Document /></el-icon>
-          <span>我的笔记</span>
-        </h1>
+        <div class="page-heading">
+          <span class="page-eyebrow">LIBRARY</span>
+          <h1 class="page-title">
+            <el-icon><Document /></el-icon>
+            <span>我的笔记</span>
+          </h1>
+        </div>
         <span class="notes-count">共 {{ total }} 条笔记</span>
       </div>
       <div class="header-right">
@@ -27,13 +30,13 @@
         />
       </div>
       
-      <div class="filter-group">
+      <div class="filter-group" :class="{ 'single-filter': allTags.length === 0 }">
         <div v-if="allTags.length > 0" class="tag-filter">
           <el-select
             v-model="activeTag"
             placeholder="按标签筛选"
             clearable
-            @change="loadNotes"
+            @change="handleTagFilterChange"
             class="tag-select"
           >
             <el-option v-for="tag in allTags" :key="tag" :label="tag" :value="tag" />
@@ -71,29 +74,46 @@
     </div>
 
     <div v-else class="notes-grid">
-      <div 
-        v-for="note in notes" 
+      <div
+        v-for="(note, index) in notes"
         :key="note.id" 
         class="note-card"
         @click="openNote(note)"
       >
         <div class="note-card-header">
-          <h3 class="note-title">{{ note.title || '无标题' }}</h3>
+          <div class="note-heading">
+            <span class="note-index">
+              {{ String((currentPage - 1) * pageSize + index + 1).padStart(2, '0') }}
+            </span>
+            <h3 class="note-title">
+              <button
+                type="button"
+                class="note-title-link"
+                :aria-label="`打开笔记：${note.title || '无标题'}`"
+                @click.stop="openNote(note)"
+              >
+                {{ note.title || '无标题' }}
+              </button>
+            </h3>
+          </div>
           <div class="note-actions">
             <el-button 
               text 
               :icon="Edit" 
+              aria-label="编辑笔记"
               @click.stop="openNote(note)"
             />
             <el-popconfirm title="确定删除这个笔记吗？" @confirm.stop="deleteNoteItem(note)">
               <template #reference>
-                <el-button text :icon="Delete" />
+                <el-button text :icon="Delete" aria-label="删除笔记" />
               </template>
             </el-popconfirm>
           </div>
         </div>
         
-        <div class="note-preview">{{ stripHtml(note.content, 100) }}</div>
+        <div class="note-preview" :class="{ empty: !stripHtml(note.content, 100) }">
+          {{ stripHtml(note.content, 100) || '空白笔记' }}
+        </div>
         
         <div class="note-footer">
           <div class="note-meta">
@@ -103,14 +123,22 @@
             </span>
           </div>
           <div v-if="note.tags" class="note-tags">
-            <el-tag v-for="t in splitTags(note.tags).slice(0, 3)" :key="t" size="small">{{ t }}</el-tag>
+            <button
+              v-for="t in splitTags(note.tags).slice(0, 3)"
+              :key="t"
+              type="button"
+              class="note-tag-link"
+              @click.stop="filterByTag(t)"
+            >
+              # {{ t }}
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 移动端浮动新建按钮 -->
-    <button v-if="isMobile" class="mobile-fab" @click="createNewNote">
+    <button v-if="isMobile" class="mobile-fab" type="button" aria-label="新建笔记" @click="createNewNote">
       <el-icon :size="24"><Plus /></el-icon>
     </button>
 
@@ -129,20 +157,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Plus, Document, Search, Edit, Delete, Clock, Tickets } from '@element-plus/icons-vue'
-import { getNotes, createNote, deleteNote } from '@/api/note'
-import api from '@/api/request'
+import { getNotes, createNote, deleteNote, getTags } from '@/api/note'
 import { message } from '@/utils/message'
 import { stripHtml, splitTags, formatDate } from '@/utils/note'
 
 const router = useRouter()
+const route = useRoute()
 
 const notes = ref([])
 const loading = ref(false)
 const searchQuery = ref('')
-const activeTag = ref('')
+const activeTag = ref(typeof route.query.tag === 'string' ? route.query.tag : '')
 const sortBy = ref('updated_at')
 const currentPage = ref(1)
 const pageSize = ref(24)
@@ -162,6 +190,22 @@ onMounted(() => {
   loadNotes()
   loadTags()
 })
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+  clearTimeout(searchTimer)
+})
+
+watch(
+  () => route.query.tag,
+  tag => {
+    const nextTag = typeof tag === 'string' ? tag : ''
+    if (nextTag === activeTag.value) return
+    activeTag.value = nextTag
+    currentPage.value = 1
+    loadNotes()
+  }
+)
 
 async function loadNotes() {
   loading.value = true
@@ -186,7 +230,7 @@ async function loadNotes() {
 
 async function loadTags() {
   try {
-    const { data } = await api.get('/notes/tags')
+    const { data } = await getTags()
     allTags.value = data.tags || []
   } catch (e) {}
 }
@@ -199,6 +243,22 @@ function debouncedSearch() {
 
 function handleSizeChange() {
   currentPage.value = 1
+  loadNotes()
+}
+
+function filterByTag(tag) {
+  activeTag.value = tag
+  currentPage.value = 1
+  router.replace({ path: '/notes-list', query: { tag } })
+  loadNotes()
+}
+
+function handleTagFilterChange(tag) {
+  currentPage.value = 1
+  router.replace({
+    path: '/notes-list',
+    query: tag ? { tag } : {}
+  })
   loadNotes()
 }
 

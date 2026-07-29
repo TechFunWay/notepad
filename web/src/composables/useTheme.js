@@ -1,6 +1,8 @@
 import { ref, watch } from 'vue'
 
-const isDark = ref(localStorage.getItem('theme') === 'dark')
+const savedTheme = localStorage.getItem('theme')
+const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches
+const isDark = ref(savedTheme ? savedTheme === 'dark' : prefersDark)
 
 function applyTheme(dark) {
   if (dark) {
@@ -10,6 +12,10 @@ function applyTheme(dark) {
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.classList.remove('dark')
   }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute(
+    'content',
+    dark ? '#09191e' : '#0891b2'
+  )
 }
 
 function initTheme() {

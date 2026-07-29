@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { getSetupStatus } from '@/api/auth'
+import { checkSetupRequired } from '@/utils/setupStatus'
 
 const routes = [
   {
@@ -59,31 +59,40 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const shouldCheckSetup =
+    requiresAuth ||
+    to.path === '/login' ||
+    to.path === '/register'
 
-  // 首次访问检查：如果没有用户，跳转到管理员注册
-  if (to.path === '/login' || to.path === '/') {
+  if (shouldCheckSetup) {
     try {
-      const { data } = await getSetupStatus()
-      if (data.needs_setup && to.path !== '/register') {
-        next('/register?setup=true')
-        return
+      const needsSetup = await checkSetupRequired()
+      if (needsSetup) {
+        // 新数据库与浏览器中残留的旧令牌不能同时成立，否则会在 / 和
+        // /register 之间循环跳转。初始化模式下以服务端状态为准。
+        auth.clearAuth()
+        if (to.path !== '/register' || to.query.setup !== 'true') {
+          return {
+            path: '/register',
+            query: { setup: 'true' },
+            replace: true
+          }
+        }
+        return true
       }
     } catch (e) {
-      // API 不可用时静默处理
+      // API 暂时不可用时交给目标页面展示，不制造重定向循环。
     }
   }
 
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    next('/login')
-  } else if (to.meta.requiresAdmin && !auth.isAdmin) {
-    next('/')
-  } else if ((to.path === '/login' || to.path === '/register') && auth.isAuthenticated) {
-    next('/')
-  } else {
-    next()
-  }
+  if (requiresAuth && !auth.isAuthenticated) return '/login'
+  if (to.meta.requiresAdmin && !auth.isAdmin) return '/'
+  if ((to.path === '/login' || to.path === '/register') && auth.isAuthenticated) return '/'
+
+  return true
 })
 
 export default router

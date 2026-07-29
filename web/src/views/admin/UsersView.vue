@@ -1,9 +1,18 @@
 <template>
   <div class="admin-container">
     <div class="admin-header">
-      <h2>用户管理</h2>
+      <div>
+        <span class="page-eyebrow">ADMINISTRATION</span>
+        <h1>用户管理</h1>
+        <p class="page-description">管理成员账号、角色与访问权限</p>
+      </div>
       <el-button type="primary" :icon="Plus" @click="showCreateDialog">新建用户</el-button>
     </div>
+
+    <nav class="admin-tabs" aria-label="管理页面">
+      <router-link to="/admin/users">用户</router-link>
+      <router-link to="/admin/configs">系统配置</router-link>
+    </nav>
 
     <!-- Desktop table -->
     <el-table v-if="!isMobile" :data="users" stripe style="width: 100%">
@@ -212,7 +221,7 @@ async function handleDelete(id) {
   margin-bottom: 20px;
 }
 
-.admin-header h2 {
+.admin-header h1 {
   margin: 0;
 }
 
@@ -265,7 +274,7 @@ async function handleDelete(id) {
     padding: 16px;
   }
 
-  .admin-header h2 {
+  .admin-header h1 {
     font-size: 18px;
   }
 }

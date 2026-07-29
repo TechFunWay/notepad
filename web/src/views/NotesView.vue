@@ -49,7 +49,11 @@
           :key="note.id"
           class="note-item"
           :class="{ active: currentNote?.id === note.id }"
+          role="button"
+          tabindex="0"
+          :aria-label="`打开笔记：${note.title || '无标题'}`"
           @click="selectNote(note)"
+          @keyup.enter="selectNote(note)"
         >
           <div class="note-item-header">
             <div class="note-item-title">{{ note.title || '无标题' }}</div>
@@ -99,6 +103,7 @@
               </el-button>
               <h1 class="view-title">{{ currentNote.title || '无标题' }}</h1>
               <el-button
+                v-if="!isMobile"
                 class="view-edit-btn"
                 type="primary"
                 :icon="EditPen"
@@ -118,15 +123,36 @@
               </span>
             </div>
             <div v-if="currentTagInput.length" class="view-tags">
-              <el-tag v-for="t in currentTagInput" :key="t" size="small" class="view-tag">{{ t }}</el-tag>
+              <button
+                v-for="t in currentTagInput"
+                :key="t"
+                type="button"
+                class="view-tag"
+                @click="openTagNotes(t)"
+              >
+                # {{ t }}
+              </button>
             </div>
           </div>
           <div class="view-content" v-html="currentNote.content"></div>
           <div class="view-footer">
-            <el-button type="primary" :icon="EditPen" @click="enterEditMode">编辑</el-button>
+            <el-button
+              class="reader-edit-action"
+              type="primary"
+              :icon="EditPen"
+              @click="enterEditMode"
+            >
+              {{ isMobile ? '编辑笔记' : '编辑' }}
+            </el-button>
             <el-popconfirm title="确定删除这个笔记吗？" @confirm="removeNote">
               <template #reference>
-                <el-button :icon="Delete">删除</el-button>
+                <el-button
+                  class="reader-delete-action"
+                  :icon="Delete"
+                  aria-label="删除笔记"
+                >
+                  <span v-if="!isMobile">删除</span>
+                </el-button>
               </template>
             </el-popconfirm>
           </div>
@@ -150,6 +176,9 @@
               class="title-input"
               @input="markDirty"
             />
+            <span class="save-status" :class="{ dirty: isDirty }">
+              {{ saving ? '保存中…' : isDirty ? '待保存' : '已保存' }}
+            </span>
           </div>
 
           <div class="editor-toolbar">
@@ -166,20 +195,31 @@
             <div class="toolbar-right">
               <div class="tags-selector">
                 <el-icon><Tickets /></el-icon>
-                <el-select
-                  v-model="currentTagInput"
-                  multiple
-                  filterable
-                  allow-create
-                  default-first-option
-                  placeholder="添加标签..."
-                  size="small"
-                  class="tags-select"
-                  @change="markDirty"
-                  @remove-tag="markDirty"
-                >
-                  <el-option v-for="tag in allTags" :key="tag" :label="tag" :value="tag" />
-                </el-select>
+                <div class="tag-entry-shell">
+                  <span v-for="tag in currentTagInput" :key="tag" class="editor-tag-chip">
+                    {{ tag }}
+                    <button
+                      type="button"
+                      :aria-label="`移除标签：${tag}`"
+                      @click="removeCurrentTag(tag)"
+                    >
+                      <el-icon><Close /></el-icon>
+                    </button>
+                  </span>
+                  <input
+                    v-model="tagDraft"
+                    class="tag-entry-input"
+                    type="text"
+                    list="note-tag-suggestions"
+                    placeholder="添加标签，按回车确认"
+                    aria-label="添加标签"
+                    @keydown="handleTagKeydown"
+                    @blur="addCurrentTag"
+                  />
+                  <datalist id="note-tag-suggestions">
+                    <option v-for="tag in availableTagSuggestions" :key="tag" :value="tag" />
+                  </datalist>
+                </div>
               </div>
             </div>
           </div>
@@ -215,12 +255,23 @@
       <div v-else class="editor-empty">
         <div class="dashboard-container">
           <div class="dashboard-header">
-            <h2>欢迎回来</h2>
-            <p>开始记录您的灵感与想法</p>
+            <div>
+              <span class="dashboard-date">{{ dashboardDate }}</span>
+              <h1>{{ greeting }}</h1>
+              <p>给今天留一点空间，写下正在发生的事。</p>
+            </div>
+            <el-button class="dashboard-create" type="primary" :icon="Plus" @click="createNewNote">
+              新建笔记
+            </el-button>
           </div>
 
           <div class="dashboard-stats">
-            <div class="stat-card">
+            <button
+              type="button"
+              class="stat-card stat-card-action"
+              aria-label="查看全部笔记"
+              @click="loadAllNotes"
+            >
               <div class="stat-icon">
                 <el-icon><Document /></el-icon>
               </div>
@@ -228,8 +279,14 @@
                 <div class="stat-number">{{ notes.length }}</div>
                 <div class="stat-label">总笔记数</div>
               </div>
-            </div>
-            <div class="stat-card">
+              <el-icon class="stat-arrow"><ArrowRight /></el-icon>
+            </button>
+            <button
+              type="button"
+              class="stat-card stat-card-action"
+              aria-label="管理标签"
+              @click="tagManagerOpen = true"
+            >
               <div class="stat-icon">
                 <el-icon><Tickets /></el-icon>
               </div>
@@ -237,20 +294,35 @@
                 <div class="stat-number">{{ allTags.length }}</div>
                 <div class="stat-label">标签数</div>
               </div>
-            </div>
+              <el-icon class="stat-arrow"><ArrowRight /></el-icon>
+            </button>
           </div>
 
           <div class="recent-notes-section">
             <div class="section-header">
-              <h3>最近笔记</h3>
+              <div>
+                <span class="section-kicker">RECENT</span>
+                <h2>最近笔记</h2>
+              </div>
               <el-button text class="more-link" @click="loadAllNotes">
                 <span>查看全部</span>
                 <el-icon><ArrowRight /></el-icon>
               </el-button>
             </div>
             <div class="recent-notes-list">
-              <div v-for="note in recentNotes" :key="note.id" class="recent-note-item" @click="selectNote(note)">
-                <div class="recent-note-title">{{ note.title || '无标题' }}</div>
+              <div
+                v-for="note in recentNotes"
+                :key="note.id"
+                class="recent-note-item"
+                role="button"
+                tabindex="0"
+                @click="selectNote(note)"
+                @keyup.enter="selectNote(note)"
+              >
+                <div class="recent-note-head">
+                  <span class="recent-note-index">{{ String(note.id).slice(-2).padStart(2, '0') }}</span>
+                  <div class="recent-note-title">{{ note.title || '无标题' }}</div>
+                </div>
                 <div class="recent-note-preview">{{ stripHtml(note.content) }}</div>
                 <div class="recent-note-footer">
                   <div class="recent-note-time">{{ formatDate(note.updated_at) }}</div>
@@ -265,7 +337,7 @@
                 </div>
               </div>
               <div v-if="recentNotes.length === 0" class="no-recent-notes">
-                <p>还没有笔记，点击上方按钮创建第一个笔记</p>
+                <p>{{ isMobile ? '还没有笔记，点击右下角开始写作' : '还没有笔记，点击上方按钮创建第一篇' }}</p>
               </div>
             </div>
           </div>
@@ -274,9 +346,77 @@
     </div>
 
     <!-- 移动端浮动新建按钮 -->
-    <button v-if="isMobile && !currentNote" class="mobile-fab" @click="createNewNote">
+    <button v-if="isMobile && !currentNote" class="mobile-fab" type="button" aria-label="新建笔记" @click="createNewNote">
       <el-icon :size="24"><Plus /></el-icon>
     </button>
+
+    <el-drawer
+      v-model="tagManagerOpen"
+      :direction="isMobile ? 'btt' : 'rtl'"
+      :size="isMobile ? '72%' : '420px'"
+      :with-header="false"
+      append-to-body
+      class="tag-manager-drawer"
+    >
+      <section class="tag-manager" aria-labelledby="tag-manager-title">
+        <header class="tag-manager-header">
+          <div>
+            <span class="section-kicker">ORGANIZE</span>
+            <h2 id="tag-manager-title">标签管理</h2>
+            <p>点击标签筛选笔记，也可以重命名或移除标签。</p>
+          </div>
+          <button
+            type="button"
+            class="tag-manager-close"
+            aria-label="关闭标签管理"
+            @click="tagManagerOpen = false"
+          >
+            <el-icon><Close /></el-icon>
+          </button>
+        </header>
+
+        <div class="tag-manager-summary">
+          <span>{{ tagStats.length }} 个标签</span>
+          <span>{{ tagStats.reduce((total, item) => total + item.count, 0) }} 次关联</span>
+        </div>
+
+        <div v-if="tagStats.length" class="tag-manager-list">
+          <article v-for="item in tagStats" :key="item.name" class="tag-manager-item">
+            <button type="button" class="tag-manager-open" @click="openTagNotes(item.name)">
+              <span class="tag-manager-name"># {{ item.name }}</span>
+              <small>{{ item.count }} 篇笔记</small>
+            </button>
+            <div class="tag-manager-actions">
+              <el-button
+                text
+                :icon="EditPen"
+                :aria-label="`重命名标签：${item.name}`"
+                @click="renameManagedTag(item)"
+              />
+              <el-popconfirm
+                :title="`移除标签「${item.name}」？笔记不会被删除。`"
+                width="250"
+                @confirm="removeManagedTag(item)"
+              >
+                <template #reference>
+                  <el-button
+                    text
+                    :icon="Delete"
+                    :aria-label="`删除标签：${item.name}`"
+                  />
+                </template>
+              </el-popconfirm>
+            </div>
+          </article>
+        </div>
+
+        <div v-else class="tag-manager-empty">
+          <el-icon><Tickets /></el-icon>
+          <h3>还没有标签</h3>
+          <p>编辑笔记时输入标签并按回车，即可创建。</p>
+        </div>
+      </section>
+    </el-drawer>
   </div>
 </template>
 
@@ -284,8 +424,16 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
 import { Plus, Check, Delete, Document, EditPen, ArrowLeft, FolderOpened, Notebook, Clock, Search, Tickets, Close, Calendar, Edit, View } from '@element-plus/icons-vue'
-import { getNotes, createNote, updateNote, deleteNote, getNote } from '@/api/note'
-import api from '@/api/request'
+import {
+  getNotes,
+  createNote,
+  updateNote,
+  deleteNote,
+  getNote,
+  getTags,
+  renameTag as renameTagApi,
+  deleteTag as deleteTagApi
+} from '@/api/note'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import TiptapEditor from '@/components/TiptapEditor.vue'
 
@@ -303,13 +451,36 @@ const editMode = ref(false)
 const isMobile = ref(false)
 const sidebarOpen = ref(false)
 const allTags = ref([])
+const tagStats = ref([])
 const activeTag = ref('')
+const tagDraft = ref('')
+const tagManagerOpen = ref(false)
+
+const availableTagSuggestions = computed(() =>
+  allTags.value.filter(tag => !currentTagInput.value.includes(tag))
+)
 
 const wordCount = computed(() => {
   const html = currentNote.value?.content || ''
   // 去掉 HTML 标签,再去掉空白,剩余字符数即为"字数"
   return html.replace(/<[^>]*>/g, '').replace(/\s/g, '').length
 })
+
+const now = new Date()
+const greeting = computed(() => {
+  const hour = now.getHours()
+  if (hour < 6) return '夜深了'
+  if (hour < 12) return '早上好'
+  if (hour < 18) return '下午好'
+  return '晚上好'
+})
+const dashboardDate = computed(() =>
+  new Intl.DateTimeFormat('zh-CN', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long'
+  }).format(now)
+)
 let searchTimer = null
 let autoSaveTimer = null
 const AUTO_SAVE_DELAY = 3000
@@ -373,6 +544,7 @@ onUnmounted(() => {
 
 watch(() => route.query.note_id, async (newId) => {
   if (!newId) return
+  if (String(currentNote.value?.id) === String(newId)) return
   await nextTick()
   await loadNotes()
   await loadTags()
@@ -405,9 +577,59 @@ async function loadNotes() {
 
 async function loadTags() {
   try {
-    const { data } = await api.get('/notes/tags')
+    const { data } = await getTags()
     allTags.value = data.tags || []
+    tagStats.value = data.items || allTags.value.map(name => ({
+      name,
+      count: notes.value.filter(note => splitTags(note.tags).includes(name)).length
+    }))
   } catch (e) {}
+}
+
+function openTagNotes(tag) {
+  tagManagerOpen.value = false
+  router.push({ path: '/notes-list', query: { tag } })
+}
+
+async function renameManagedTag(item) {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      `为标签「${item.name}」输入新名称`,
+      '重命名标签',
+      {
+        confirmButtonText: '保存',
+        cancelButtonText: '取消',
+        inputValue: item.name,
+        inputPlaceholder: '标签名称',
+        inputValidator: value => {
+          const name = value?.trim()
+          if (!name) return '标签名称不能为空'
+          if (name.length > 80) return '标签名称不能超过 80 个字符'
+          return true
+        }
+      }
+    )
+
+    const nextName = value.trim()
+    if (nextName === item.name) return
+    await renameTagApi(item.name, nextName)
+    ElMessage.success('标签已重命名')
+    await Promise.all([loadNotes(), loadTags()])
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') {
+      ElMessage.error('标签重命名失败')
+    }
+  }
+}
+
+async function removeManagedTag(item) {
+  try {
+    await deleteTagApi(item.name)
+    ElMessage.success('标签已移除，笔记内容不受影响')
+    await Promise.all([loadNotes(), loadTags()])
+  } catch {
+    ElMessage.error('标签删除失败')
+  }
 }
 
 async function openNoteFromQuery() {
@@ -417,8 +639,9 @@ async function openNoteFromQuery() {
     const { data } = await getNote(noteId)
     currentNote.value = { ...data }
     currentTagInput.value = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+    tagDraft.value = ''
     isDirty.value = false
-    editMode.value = false
+    editMode.value = route.query.edit === '1'
   } catch (e) {
     ElMessage.error('加载笔记失败')
   }
@@ -443,11 +666,14 @@ async function createNewNote() {
     const title = `${yy}${mm}${dd}的笔记`
     const { data } = await createNote({ title, content: '<p></p>', tags: '' })
     notes.value.unshift(data)
+    recentNotes.value = notes.value.slice(0, 5)
     currentNote.value = { ...data }
     currentTagInput.value = []
+    tagDraft.value = ''
     isDirty.value = false
     editMode.value = true
     sidebarOpen.value = false
+    router.replace({ path: '/', query: { note_id: data.id, edit: '1' } })
   } catch (e) {
     ElMessage.error('创建笔记失败')
   }
@@ -469,8 +695,10 @@ async function selectNote(note) {
   }
   currentNote.value = { ...note }
   currentTagInput.value = note.tags ? note.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+  tagDraft.value = ''
   isDirty.value = false
   editMode.value = false
+  router.replace({ path: '/', query: { note_id: note.id } })
   if (isMobile.value) {
     sidebarOpen.value = false
   }
@@ -478,7 +706,9 @@ async function selectNote(note) {
 
 function backToList() {
   currentNote.value = null
+  tagDraft.value = ''
   sidebarOpen.value = true
+  router.replace({ path: '/' })
 }
 
 function markDirty() {
@@ -489,13 +719,47 @@ function markDirty() {
   autoSaveTimer = setTimeout(() => saveNote(false), AUTO_SAVE_DELAY)
 }
 
+function addCurrentTag() {
+  const tags = tagDraft.value
+    .split(/[,，]/)
+    .map(tag => tag.trim())
+    .filter(Boolean)
+
+  if (tags.length === 0) return
+
+  let changed = false
+  for (const tag of tags) {
+    if (!currentTagInput.value.includes(tag)) {
+      currentTagInput.value.push(tag)
+      changed = true
+    }
+  }
+  tagDraft.value = ''
+  if (changed) markDirty()
+}
+
+function handleTagKeydown(event) {
+  if (event.key !== 'Enter' && event.key !== ',' && event.key !== '，') return
+  event.preventDefault()
+  addCurrentTag()
+}
+
+function removeCurrentTag(tag) {
+  currentTagInput.value = currentTagInput.value.filter(item => item !== tag)
+  markDirty()
+}
+
 function enterEditMode() {
   editMode.value = true
+  if (currentNote.value) {
+    router.replace({ path: '/', query: { note_id: currentNote.value.id, edit: '1' } })
+  }
 }
 
 async function quickEditNote(note) {
   await selectNote(note)
   editMode.value = true
+  router.replace({ path: '/', query: { note_id: note.id, edit: '1' } })
   if (isMobile.value) {
     sidebarOpen.value = false
   }
@@ -507,6 +771,9 @@ async function exitEditMode() {
     await saveNote(false)
   }
   editMode.value = false
+  if (currentNote.value) {
+    router.replace({ path: '/', query: { note_id: currentNote.value.id } })
+  }
 }
 
 async function saveNote(showToast = true) {
@@ -536,6 +803,7 @@ async function removeNote() {
   try {
     await deleteNote(currentNote.value.id)
     currentNote.value = null
+    router.replace({ path: '/' })
     ElMessage.success('删除成功')
     await loadNotes()
     await loadTags()
@@ -906,6 +1174,8 @@ html[data-theme="dark"] .clear-tag:hover {
 .editor-content {
   flex: 1;
   overflow-y: auto;
+  /* 同上：避免 overflow-y 隐式触发 overflow-x: auto 产生水平滚动条 */
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -919,7 +1189,7 @@ html[data-theme="dark"] .clear-tag:hover {
   overflow-y: auto;
 }
 
-.editor-empty h2 {
+.editor-empty h1 {
   font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
@@ -950,7 +1220,7 @@ html[data-theme="dark"] .clear-tag:hover {
   margin-bottom: 24px;
 }
 
-.dashboard-header h2 {
+.dashboard-header h1 {
   font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
@@ -1143,6 +1413,8 @@ html[data-theme="dark"] .clear-tag:hover {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  /* 同上：预览态同样避免出现多余的水平滚动条 */
+  overflow-x: hidden;
   padding: 32px 40px;
 }
 
@@ -1209,6 +1481,9 @@ html[data-theme="dark"] .clear-tag:hover {
   font-size: 16px;
   color: var(--text-primary);
   padding: 8px 0 24px;
+  /* 同编辑器：强制超长串/URL 折行，兼容老内核，避免横向撑宽 */
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .view-content :deep(h1) {
@@ -1261,6 +1536,10 @@ html[data-theme="dark"] .clear-tag:hover {
   border-radius: 8px;
   overflow-x: auto;
   margin: 1em 0;
+  /* 代码块保留自身横向滚动，不继承正文的强制折行 */
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .view-content :deep(pre code) {
@@ -1288,7 +1567,7 @@ html[data-theme="dark"] .clear-tag:hover {
     padding: 4px 4px;
   }
   
-  .dashboard-header h2 {
+  .dashboard-header h1 {
     font-size: 16px;
     margin: 2px 0 1px;
   }

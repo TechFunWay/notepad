@@ -20,6 +20,15 @@ type updateNoteRequest struct {
 	Tags    string `json:"tags"`
 }
 
+type renameTagRequest struct {
+	OldName string `json:"old_name" binding:"required,max=80"`
+	NewName string `json:"new_name" binding:"required,max=80"`
+}
+
+type deleteTagRequest struct {
+	Name string `json:"name" binding:"required,max=80"`
+}
+
 func ListNotes(c *gin.Context) {
 	userID, _ := c.Get("userID")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -111,13 +120,50 @@ func DeleteNote(c *gin.Context) {
 
 func GetAllTags(c *gin.Context) {
 	userID, _ := c.Get("userID")
-	tags, err := model.GetAllTags(userID.(int64))
+	stats, err := model.GetTagStats(userID.(int64))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取标签失败"})
 		return
 	}
-	if tags == nil {
-		tags = []string{}
+	if stats == nil {
+		stats = []model.TagStat{}
 	}
-	c.JSON(http.StatusOK, gin.H{"tags": tags})
+
+	tags := make([]string, 0, len(stats))
+	for _, stat := range stats {
+		tags = append(tags, stat.Name)
+	}
+	c.JSON(http.StatusOK, gin.H{"tags": tags, "items": stats})
+}
+
+func RenameTag(c *gin.Context) {
+	var req renameTagRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供原标签名和新标签名"})
+		return
+	}
+
+	userID, _ := c.Get("userID")
+	affected, err := model.RenameTag(userID.(int64), req.OldName, req.NewName)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "标签已重命名", "affected_notes": affected})
+}
+
+func DeleteTag(c *gin.Context) {
+	var req deleteTagRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供标签名"})
+		return
+	}
+
+	userID, _ := c.Get("userID")
+	affected, err := model.DeleteTag(userID.(int64), req.Name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "标签已删除", "affected_notes": affected})
 }
