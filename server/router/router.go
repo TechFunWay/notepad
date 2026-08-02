@@ -110,6 +110,11 @@ func Setup(uploadDir string, webDir string) *gin.Engine {
 	if fileServer != nil {
 		r.NoRoute(func(c *gin.Context) {
 			reqPath := c.Request.URL.Path
+			if reqPath == "/manifest.webmanifest" {
+				c.Header("Content-Type", "application/manifest+json")
+				fileServer.ServeHTTP(c.Writer, c.Request)
+				return
+			}
 			if strings.HasPrefix(reqPath, "/api") {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 				return
