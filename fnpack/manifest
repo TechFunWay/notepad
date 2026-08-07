@@ -1,16 +1,30 @@
 appname               = techfunway-notepad
-version               = 1.1.0
+version               = 1.2.0
 display_name          = 记事本
 platform              = x86
 source                = thirdparty
 maintainer            = 科技智趣坊
-maintainer_url        = http://techfunway.wycto.cn/fnapp/notepad/
+maintainer_url        = https://github.com/TechFunWay/notepad
 distributor           = 科技智趣坊
 distributor_url       = http://techfunway.wycto.cn
 desktop_uidir         = ui
 desktop_applaunchname = techfunway-notepad.Application
 desc                  = 一款轻量、精美的多用户记事本应用，支持富文本编辑、标签分类管理、暗色模式、数据隔离，适合家庭或团队私有化部署
 changelog             = """
+1.2.0 移动体验与登录稳定性优化
+【功能】
+- 重构响应式前端布局，优化手机端导航、笔记列表和编辑器
+- 新增标签管理面板，支持查看关联数量、重命名和移除标签
+- 支持添加到手机主屏幕，并补充多尺寸应用图标
+
+【修复】
+- 登录签名密钥自动持久化，应用重启后不再导致用户退出
+- 登录有效期由 7 天延长至 30 天
+- 前端入口禁用缓存，避免升级后出现白屏
+
+【升级提示】
+- 升级后可能需要重新登录一次，此后应用重启不会再丢失登录状态
+
 1.1.0 体验优化与可用性提升
 【优化】
 - 编辑器操作栏移至底部，编辑体验更顺手

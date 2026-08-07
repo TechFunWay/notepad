@@ -17,7 +17,7 @@ type upgrade struct {
 // upgrades 按版本号升序排列，新增版本追加在末尾
 var upgrades = []upgrade{
 	{"1.0.0", upgrade_v1_0_0},
-	// {"1.2.0", upgrade_v1_2_0},
+	{"1.2.0", nil},
 	// {"1.3.0", nil},  // fn 为 nil 表示空升级，仅记录版本
 }
 

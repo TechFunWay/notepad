@@ -19,6 +19,30 @@
 - 首个注册用户自动成为超级管理员（唯一）
 - 数据库自动迁移，支持版本升级
 
+## 界面预览
+
+### 写作工作台
+
+![写作工作台](docs/images/v1.2.0/01-writing-workspace.png)
+
+### 全部笔记
+
+![全部笔记](docs/images/v1.2.0/02-notes-library.png)
+
+### 工作台首页
+
+![工作台首页](docs/images/v1.2.0/03-dashboard.png)
+
+### 标签管理
+
+![标签管理](docs/images/v1.2.0/04-tag-manager.png)
+
+### 手机端
+
+<p align="center">
+  <img src="docs/images/v1.2.0/05-mobile-dashboard.png" width="390" alt="手机端工作台">
+</p>
+
 ## 快速开始
 
 ### 直接运行
@@ -38,23 +62,23 @@ docker run -d \
   --name notepad \
   -p 8904:8904 \
   -v ./data:/app/data \
-  -e JWT_SECRET=your-secret-key \
   techfunways/notepad:latest
 ```
+
+登录签名密钥会自动生成并保存到数据目录，也可通过 `JWT_SECRET` 环境变量指定固定密钥。
 
 ### Docker Compose
 
 ```bash
-# 编辑 docker-compose.yaml 中的 JWT_SECRET
 docker compose up -d
 ```
 
 ### 飞牛NAS 安装
 
-1. 下载 `notepad_<version>_fpk.tar.gz`
+1. 下载与设备架构对应的 `.fpk` 安装包
 2. 在飞牛应用中心选择"手动安装"
 3. 上传 FPK 包
-4. 按向导提示配置端口和 JWT 密钥
+4. 按向导提示配置服务端口和共享目录权限
 
 ## 终端命令
 
@@ -75,7 +99,7 @@ docker compose up -d
 |------|--------|------|
 | PORT | 8904 | 服务端口 |
 | DB_PATH | ./data/notepad.db | SQLite 数据库路径 |
-| JWT_SECRET | 随机生成 | JWT 签名密钥（建议设置固定值） |
+| JWT_SECRET | 数据目录中自动生成并持久化 | JWT 签名密钥（可设置固定值覆盖） |
 | DATA_DIR | ./data | 数据目录 |
 
 ## 从源码构建
