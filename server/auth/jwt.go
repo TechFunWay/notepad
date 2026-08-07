@@ -8,6 +8,8 @@ import (
 
 var jwtSecret []byte
 
+const tokenValidity = 30 * 24 * time.Hour
+
 func Init(secret string) {
 	jwtSecret = []byte(secret)
 }
@@ -25,7 +27,7 @@ func GenerateToken(userID int64, username, role string) (string, error) {
 		Username: username,
 		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenValidity)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
