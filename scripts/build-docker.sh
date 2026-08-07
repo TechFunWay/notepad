@@ -11,7 +11,7 @@ VERSION=$(cat VERSION)
 APP_NAME="techfunway-notepad"
 IMAGE_NAME="techfunways/notepad"
 RELEASE_DIR="release/v${VERSION}"
-BUILDER_NAME="notepad-multiarch"
+BUILDER_NAME="${BUILDER_NAME:-notepad-multiarch}"
 
 [ ! -d "${RELEASE_DIR}/${APP_NAME}-${VERSION}-linux-amd64" ] && echo "❌ 请先运行 ./scripts/build-all.sh" && exit 1
 

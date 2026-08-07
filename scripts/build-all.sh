@@ -7,6 +7,10 @@ cd "$PROJECT_DIR"
 
 VERSION=$(cat VERSION)
 [ -z "$VERSION" ] && echo "❌ 无法获取版本号" && exit 1
+BUILD_TIME=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+GIT_COMMIT=$(git describe --always --dirty 2>/dev/null || echo "unknown")
+LDFLAGS="-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}"
+GOCACHE_DIR="${GOCACHE:-/tmp/notepad-go-cache}"
 
 APP_NAME="techfunway-notepad"
 RELEASE_DIR="release/v${VERSION}"
@@ -37,7 +41,7 @@ compile() {
     cp -r web/dist server/static/dist
 
     cd server
-    CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -ldflags="-s -w" -o "../${DIR}/notepad" . 2>/dev/null
+    GOCACHE="${GOCACHE_DIR}" CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -ldflags="${LDFLAGS}" -o "../${DIR}/notepad" .
     cd ..
     
     if [ "${GOOS}" = "windows" ]; then
