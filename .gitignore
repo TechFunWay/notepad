@@ -54,12 +54,5 @@ server/data
 # Docker
 .docker/
 
-# Playwright MCP (browser automation artifacts)
-.playwright-mcp/
-
-# AI 辅助工具生成的本地过程文件
-.omo/
-design-system/
-
 # Logs
 *.log
