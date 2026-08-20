@@ -39,6 +39,23 @@ export const useAuthStore = defineStore('auth', () => {
     return data
   }
 
+  async function getFnOSIdentity() {
+    const { data } = await api.get('/auth/fnos/identity')
+    return data
+  }
+
+  async function fnosLogin() {
+    const { data } = await api.post('/auth/fnos/login')
+    if (!data.binding_required) setAuth(data.token, data.user)
+    return data
+  }
+
+  async function bindFnOS(mode, username = '', password = '') {
+    const { data } = await api.post('/auth/fnos/bind', { mode, username, password })
+    setAuth(data.token, data.user)
+    return data
+  }
+
   async function logout() {
     try {
       await api.post('/auth/logout')
@@ -53,6 +70,9 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     login,
     register,
+    fnosLogin,
+    getFnOSIdentity,
+    bindFnOS,
     logout,
     setAuth,
     clearAuth

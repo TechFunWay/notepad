@@ -19,6 +19,11 @@ const routes = [
     component: () => import('@/views/ForgotPasswordView.vue')
   },
   {
+    path: '/fnos-auth-callback',
+    name: 'FnOSAuthCallback',
+    component: () => import('@/views/FnOSAuthCallbackView.vue')
+  },
+  {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
@@ -55,7 +60,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
 

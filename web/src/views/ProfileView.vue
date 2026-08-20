@@ -472,7 +472,7 @@ async function handleSecurityChange() {
 
   .menu-list {
     display: flex;
-    padding: 0 10px;
+    padding: 8px 10px 0;
     gap: 6px;
   }
 

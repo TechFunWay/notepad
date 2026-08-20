@@ -101,6 +101,18 @@
                 <el-icon><ArrowRight /></el-icon>
               </el-button>
             </div>
+            <div v-if="fnosEnabled" class="form-item fnos-form-item">
+              <el-button
+                plain
+                size="large"
+                class="fnos-btn"
+                :loading="loading"
+                :disabled="loading"
+                @click="handleFnOSLogin"
+              >
+                使用飞牛 NAS 登录
+              </el-button>
+            </div>
           </div>
           <div class="form-footer">
             <router-link to="/forgot-password" class="forgot-link">忘记密码？</router-link>
@@ -114,6 +126,13 @@
         </div>
       </div>
     </div>
+    <FnOSConfirmDialog
+      v-model="fnosConfirmVisible"
+      :username="fnosConfirmUsername"
+      :loading="loading"
+      @confirm="confirmFnOSLogin"
+      @switch="switchFnOSAccount"
+    />
   </div>
 </template>
 
@@ -125,6 +144,8 @@ import { Document, User, Lock, ArrowRight, EditPen, Tickets, Monitor } from '@el
 import { useAuthStore } from '@/stores/auth'
 import { useConfigStore } from '@/stores/config'
 import { md5 } from '@/utils/crypto'
+import { openFnOSAuthPopup } from '@/utils/fnosAuthPopup'
+import FnOSConfirmDialog from '@/components/FnOSConfirmDialog.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -132,6 +153,9 @@ const config = useConfigStore()
 const loading = ref(false)
 const allowRegister = ref(true)
 const rememberMe = ref(false)
+const fnosEnabled = import.meta.env.VITE_FNOS_APP === 'true'
+const fnosConfirmVisible = ref(false)
+const fnosConfirmUsername = ref('')
 
 const form = reactive({
   username: '',
@@ -181,6 +205,49 @@ async function handleLogin() {
   } finally {
     loading.value = false
   }
+}
+
+async function handleFnOSLogin() {
+  loading.value = true
+  try {
+    const data = await auth.getFnOSIdentity()
+    fnosConfirmUsername.value = data.fnos_username || ''
+    fnosConfirmVisible.value = true
+  } catch (e) {
+    message.error(e.response?.data?.error || e.message || '无法获取飞牛 NAS 账号')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function confirmFnOSLogin() {
+  loading.value = true
+  try {
+    const result = await auth.fnosLogin()
+    fnosConfirmVisible.value = false
+    if (result.binding_required) {
+      router.push({ path: '/register', query: { fnos: 'bind', fnos_username: result.fnos_username || '' } })
+      return
+    }
+    message.success('登录成功')
+    router.push('/')
+  } catch (e) {
+    fnosConfirmVisible.value = false
+    message.error(e.response?.data?.error || e.message || '飞牛 NAS 登录失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function switchFnOSAccount() {
+  fnosConfirmVisible.value = false
+  const status = await openFnOSAuthPopup()
+  if (status === 'blocked') {
+    message.warning('浏览器拦截了登录弹窗，请允许本网站弹出窗口后重试')
+    return
+  }
+  // 完成或取消后，重新拉取当前（可能已切换的）飞牛账号，并再次弹出确认窗口
+  await handleFnOSLogin()
 }
 </script>
 
@@ -433,6 +500,18 @@ async function handleLogin() {
 
 .submit-btn:active {
   transform: translateY(0);
+}
+
+.fnos-form-item {
+  margin-top: 12px;
+}
+
+.fnos-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .form-options {

@@ -154,8 +154,18 @@ func UpdatePasswordByUsername(username, password string) error {
 }
 
 func DeleteUser(id int64) error {
-	_, err := database.DB.Exec("DELETE FROM users WHERE id = ?", id)
-	return err
+	tx, err := database.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec("DELETE FROM fnos_bindings WHERE user_id = ?", id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec("DELETE FROM users WHERE id = ?", id); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func CountUsers() (int, error) {

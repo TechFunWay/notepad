@@ -134,7 +134,7 @@
               </button>
             </div>
           </div>
-          <div class="view-content" v-html="currentNote.content"></div>
+          <div class="view-content" v-html="readerContent"></div>
           <div class="view-footer">
             <el-button
               class="reader-edit-action"
@@ -436,6 +436,7 @@ import {
 } from '@/api/note'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import TiptapEditor from '@/components/TiptapEditor.vue'
+import { toRuntimeUploadHtml } from '@/utils/upload'
 
 const router = useRouter()
 const route = useRoute()
@@ -455,6 +456,10 @@ const tagStats = ref([])
 const activeTag = ref('')
 const tagDraft = ref('')
 const tagManagerOpen = ref(false)
+
+const readerContent = computed(() =>
+  toRuntimeUploadHtml(currentNote.value?.content || '')
+)
 
 const availableTagSuggestions = computed(() =>
   allTags.value.filter(tag => !currentTagInput.value.includes(tag))

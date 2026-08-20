@@ -8,8 +8,8 @@
             <div class="brand-icon">
               <el-icon :size="56"><EditPen /></el-icon>
             </div>
-            <h1 class="brand-title">{{ isSetup ? '设置管理员' : '创建账号' }}</h1>
-            <p class="brand-desc">{{ isSetup ? '首次使用，请设置管理员账号' : '开始记录您的每一个灵感' }}</p>
+            <h1 class="brand-title">{{ isFnOSBinding ? (isSetup ? '设置管理员' : '绑定飞牛 NAS') : (isSetup ? '设置管理员' : '创建账号') }}</h1>
+            <p class="brand-desc">{{ isFnOSBinding ? (isSetup ? '创建管理员账号并绑定飞牛登录' : '关联应用账号，之后即可使用 NAS 登录') : (isSetup ? '首次使用，请设置管理员账号' : '开始记录您的每一个灵感') }}</p>
           </div>
           <div class="welcome-content">
             <div class="welcome-icon">
@@ -39,8 +39,8 @@
             <span>记事本</span>
           </div>
           <div class="form-header">
-            <h2>{{ isSetup ? '设置管理员' : '开始注册' }}</h2>
-            <p>{{ isSetup ? '请设置管理员账号和密码' : '只需几步即可完成注册' }}</p>
+            <h2>{{ isFnOSBinding ? (isSetup ? '设置管理员并绑定飞牛' : '绑定飞牛 NAS 账号') : (isSetup ? '设置管理员' : '开始注册') }}</h2>
+            <p>{{ isFnOSBinding ? (isSetup ? '请设置管理员账号和密码，完成后将自动与飞牛 NAS 登录绑定' : `当前飞牛用户 ${fnosUsername || '已登录用户'} 尚未绑定应用账号`) : (isSetup ? '请设置管理员账号和密码' : '只需几步即可完成注册') }}</p>
           </div>
           <el-form :model="form" class="register-form" label-width="0" @submit.prevent>
             <el-form-item>
@@ -77,7 +77,7 @@
                 />
               </div>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-if="!isFnOSBinding || fnosMode === 'register'">
               <label class="auth-label" for="register-password-confirm">确认密码</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><Lock /></el-icon>
@@ -95,7 +95,7 @@
                 />
               </div>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-if="!isFnOSBinding || fnosMode === 'register'">
               <label class="auth-label" for="register-question">安全问题</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><QuestionFilled /></el-icon>
@@ -110,7 +110,7 @@
                 />
               </div>
             </el-form-item>
-            <el-form-item>
+            <el-form-item v-if="!isFnOSBinding || fnosMode === 'register'">
               <label class="auth-label" for="register-answer">安全答案</label>
               <div class="input-wrapper">
                 <el-icon class="input-icon"><Key /></el-icon>
@@ -136,12 +136,29 @@
                 :loading="loading" 
                 @click="handleRegister"
               >
-                <span>{{ isSetup ? '设置管理员' : '创建账号' }}</span>
+                <span>{{ isFnOSBinding ? (fnosMode === 'register' ? '创建并绑定' : '验证并绑定') : (isSetup ? '设置管理员' : '创建账号') }}</span>
                 <el-icon><ArrowRight /></el-icon>
               </el-button>
             </el-form-item>
+            <el-button v-if="isFnOSBinding && !isSetup" text type="primary" class="switch-bind-btn" @click="fnosMode = fnosMode === 'register' ? 'bind' : 'register'">
+              {{ fnosMode === 'register' ? '已有应用账号？验证并绑定' : '没有应用账号？创建并绑定' }}
+            </el-button>
           </el-form>
-          <div class="form-footer" v-if="!isSetup">
+          <div v-if="fnosEnabled && isSetup && !isFnOSBinding" class="fnos-setup">
+            <div class="auth-divider"><span>或使用飞牛 NAS 账号</span></div>
+            <el-button
+              plain
+              size="large"
+              class="fnos-btn"
+              :loading="fnosLoading"
+              :disabled="loading || fnosLoading"
+              @click="handleFnOSSetup"
+            >
+              使用飞牛 NAS 账号设置管理员
+            </el-button>
+            <p>授权后将进入设置管理员表单，输入管理员账号密码并与飞牛账号绑定。</p>
+          </div>
+          <div class="form-footer" v-if="!isSetup && !isFnOSBinding">
             <div class="login-prompt">
               <span>已有账号？</span>
               <router-link to="/login" class="login-link">立即登录</router-link>
@@ -150,6 +167,13 @@
         </div>
       </div>
     </div>
+    <FnOSConfirmDialog
+      v-model="fnosConfirmVisible"
+      :username="fnosConfirmUsername"
+      :loading="fnosLoading"
+      @confirm="confirmFnOSSetup"
+      @switch="switchFnOSAccount"
+    />
   </div>
 </template>
 
@@ -161,13 +185,22 @@ import { EditPen, User, Lock, QuestionFilled, Key, ArrowRight, Star, CircleCheck
 import { useAuthStore } from '@/stores/auth'
 import { md5 } from '@/utils/crypto'
 import { markSetupComplete } from '@/utils/setupStatus'
+import { openFnOSAuthPopup } from '@/utils/fnosAuthPopup'
+import FnOSConfirmDialog from '@/components/FnOSConfirmDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const loading = ref(false)
+const fnosLoading = ref(false)
+const fnosEnabled = import.meta.env.VITE_FNOS_APP === 'true'
+const fnosConfirmVisible = ref(false)
+const fnosConfirmUsername = ref('')
 
 const isSetup = computed(() => route.query.setup === 'true')
+const isFnOSBinding = computed(() => import.meta.env.VITE_FNOS_APP === 'true' && route.query.fnos === 'bind')
+const fnosUsername = computed(() => typeof route.query.fnos_username === 'string' ? route.query.fnos_username : '')
+const fnosMode = ref('register')
 
 const form = reactive({
   username: '',
@@ -214,16 +247,23 @@ async function focusSecurityAnswer() {
 }
 
 async function handleRegister() {
-  if (!form.username || !form.password || !form.password_confirm) {
+  if (!form.username || !form.password || ((!isFnOSBinding.value || fnosMode.value === 'register') && !form.password_confirm)) {
     message.warning('请填写必要信息')
     return
   }
-  if (form.password !== form.password_confirm) {
+  if ((!isFnOSBinding.value || fnosMode.value === 'register') && form.password !== form.password_confirm) {
     message.warning('两次输入的密码不一致')
     return
   }
   loading.value = true
   try {
+    if (isFnOSBinding.value) {
+      await auth.bindFnOS(fnosMode.value, form.username, md5(form.password))
+      if (isSetup.value) markSetupComplete()
+      message.success(isSetup.value ? '管理员设置成功' : '飞牛 NAS 账号绑定成功')
+      router.push('/')
+      return
+    }
     await auth.register({
       username: form.username,
       password: md5(form.password),
@@ -239,6 +279,60 @@ async function handleRegister() {
     loading.value = false
   }
 }
+
+async function handleFnOSSetup() {
+  fnosLoading.value = true
+  try {
+    const data = await auth.getFnOSIdentity()
+    fnosConfirmUsername.value = data.fnos_username || ''
+    fnosConfirmVisible.value = true
+  } catch (e) {
+    message.error(e.response?.data?.error || e.message || '无法获取飞牛 NAS 账号')
+  } finally {
+    fnosLoading.value = false
+  }
+}
+
+async function confirmFnOSSetup() {
+  fnosLoading.value = true
+  try {
+    const result = await auth.fnosLogin()
+    fnosConfirmVisible.value = false
+    if (!result.binding_required) {
+      // 该飞牛账号已绑定应用账号，直接用飞牛账号登录
+      markSetupComplete()
+      message.success('飞牛 NAS 登录成功')
+      router.push('/')
+      return
+    }
+    // 未绑定：进入创建管理员表单，输入应用管理员账号密码后与飞牛账号绑定
+    router.push({
+      path: '/register',
+      query: { setup: 'true', fnos: 'bind', fnos_username: result.fnos_username || '' }
+    })
+  } catch (e) {
+    fnosConfirmVisible.value = false
+    message.error(e.response?.data?.error || e.message || '飞牛 NAS 授权失败')
+  } finally {
+    fnosLoading.value = false
+  }
+}
+
+async function switchFnOSAccount() {
+  fnosConfirmVisible.value = false
+  const status = await openFnOSAuthPopup()
+  if (status === 'blocked') {
+    message.warning('浏览器拦截了登录弹窗，请允许本网站弹出窗口后重试')
+    return
+  }
+  // 完成或取消后，重新拉取当前（可能已切换的）飞牛账号，并再次弹出确认窗口
+  await handleFnOSSetup()
+}
+
+if (isFnOSBinding.value) {
+  form.username = fnosUsername.value
+}
+
 </script>
 
 <style scoped>
@@ -429,6 +523,42 @@ async function handleRegister() {
 
 .register-form {
   margin-bottom: 24px;
+}
+
+.fnos-setup {
+  margin-top: 24px;
+}
+
+.fnos-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.fnos-setup > p {
+  margin: 8px 0 20px;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: #e5e7eb;
 }
 
 .input-wrapper {

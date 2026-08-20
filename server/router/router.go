@@ -8,21 +8,29 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"notepad/fnos"
 	"notepad/handler"
 	"notepad/middleware"
 	"notepad/static"
 )
 
-func Setup(uploadDir string, webDir string) *gin.Engine {
+func Setup(uploadDir string, webDir string, fnOSConfig fnos.Config) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORS())
 
-	// 上传文件静态服务
-	r.Static("/uploads", uploadDir)
+	appGroup := r.Group("")
+	appPrefix := ""
+	if fnOSConfig.Enabled {
+		appPrefix = strings.TrimSuffix(fnOSConfig.Prefix, "/")
+		appGroup = r.Group(appPrefix)
+	}
 
-	api := r.Group("/api")
+	// 上传文件静态服务
+	appGroup.Static("/uploads", uploadDir)
+
+	api := appGroup.Group("/api")
 	{
 		// Public
 		api.POST("/auth/register", handler.Register)
@@ -34,6 +42,9 @@ func Setup(uploadDir string, webDir string) *gin.Engine {
 		api.GET("/public-config", handler.GetPublicConfig)
 		api.GET("/version", handler.GetVersion)
 		api.GET("/health", handler.Health)
+		if fnOSConfig.Enabled {
+			fnos.RegisterRoutes(api.Group("/auth/fnos"))
+		}
 
 		// Authenticated
 		auth := api.Group("", middleware.RequireAuth())
@@ -110,9 +121,25 @@ func Setup(uploadDir string, webDir string) *gin.Engine {
 	if fileServer != nil {
 		r.NoRoute(func(c *gin.Context) {
 			reqPath := c.Request.URL.Path
+			if fnOSConfig.Enabled {
+				if reqPath != appPrefix && !strings.HasPrefix(reqPath, appPrefix+"/") {
+					c.Status(http.StatusNotFound)
+					return
+				}
+				reqPath = strings.TrimPrefix(reqPath, appPrefix)
+				if reqPath == "" {
+					reqPath = "/"
+				}
+			}
+			serveFile := func(filePath string) {
+				original := c.Request.URL.Path
+				c.Request.URL.Path = filePath
+				fileServer.ServeHTTP(c.Writer, c.Request)
+				c.Request.URL.Path = original
+			}
 			if reqPath == "/manifest.webmanifest" {
 				c.Header("Content-Type", "application/manifest+json")
-				fileServer.ServeHTTP(c.Writer, c.Request)
+				serveFile(reqPath)
 				return
 			}
 			if strings.HasPrefix(reqPath, "/api") {
@@ -129,7 +156,7 @@ func Setup(uploadDir string, webDir string) *gin.Engine {
 					// 其它根目录文件（favicon 等）每次回源校验
 					c.Header("Cache-Control", "no-cache")
 				}
-				fileServer.ServeHTTP(c.Writer, c.Request)
+				serveFile(reqPath)
 				return
 			}
 
@@ -143,8 +170,7 @@ func Setup(uploadDir string, webDir string) *gin.Engine {
 			// SPA 前端路由（如 /login、/notes-list）：回退 index.html
 			// 入口文件禁止缓存，确保升级后浏览器总能拿到最新的资源引用，避免白屏
 			c.Header("Cache-Control", "no-cache")
-			c.Request.URL.Path = "/"
-			fileServer.ServeHTTP(c.Writer, c.Request)
+			serveFile("/")
 		})
 	}
 

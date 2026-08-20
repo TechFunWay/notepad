@@ -1,68 +1,65 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
-VERSION=$(cat VERSION)
+VERSION=$(tr -d '\n' < VERSION)
 [ -z "$VERSION" ] && echo "❌ 无法获取版本号" && exit 1
-
+BUILD_TIME=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+LDFLAGS="-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}"
+GOCACHE_DIR="${GOCACHE:-/tmp/notepad-fnos-go-cache}"
 APP_NAME="techfunway-notepad"
 RELEASE_DIR="release/v${VERSION}"
+WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/notepad-fnpack.XXXXXX")
+trap 'rm -rf "$WORK_DIR"' EXIT
 
-[ ! -d "${RELEASE_DIR}/${APP_NAME}-${VERSION}-linux-amd64" ] && echo "❌ 请先运行 ./scripts/build-all.sh" && exit 1
+command -v fnpack >/dev/null 2>&1 || { echo "❌ 未找到 fnpack"; exit 1; }
+mkdir -p "$RELEASE_DIR"
 
 echo "============================================"
-echo "  飞牛 fnOS 打包 v${VERSION}"
+echo "  仅构建飞牛 fnOS 安装包 v${VERSION}"
 echo "============================================"
 
-cp fnpack/manifest fnpack/manifest.bak
-sed -i '' "s/^version.*/version               = ${VERSION}/" fnpack/manifest
+echo "📦 构建飞牛前端..."
+VITE_FNOS_APP=true npm --prefix web run build -- --base="/app/${APP_NAME}/"
+rm -rf server/static/dist
+cp -R web/dist server/static/dist
 
 build_fnpack() {
-    ARCH=$1
-    PLATFORM=$2
-    LABEL=$3
-    echo -n "  📦 ${LABEL}.fpk... "
-    
-    DIR="${RELEASE_DIR}/fnpack-${ARCH}"
-    rm -rf "${DIR}"
-    mkdir -p "${DIR}"
-    
-    # 复制飞牛模板，排除 .DS_Store
-    find fnpack -name ".DS_Store" -delete 2>/dev/null || true
-    cp -r fnpack/* "${DIR}/"
-    sed -i '' "s/^platform.*/platform              = ${PLATFORM}/" "${DIR}/manifest"
-    
-    cp "${RELEASE_DIR}/${APP_NAME}-${VERSION}-linux-${ARCH}/notepad" "${DIR}/app/server/"
-    cp -r "${RELEASE_DIR}/${APP_NAME}-${VERSION}-linux-${ARCH}/www/"* "${DIR}/app/www/"
+    local arch=$1 platform=$2 label=$3
+    local binary="${WORK_DIR}/notepad-linux-${arch}"
+    local package_dir="${WORK_DIR}/package-${arch}"
 
-    # 复制使用说明文档到 app 目录
-    for doc in "${PROJECT_DIR}/release/v${VERSION}/README-"*.md; do
-        if [ -f "$doc" ]; then
-            cp "$doc" "${DIR}/app/"
-        fi
-    done
-    
-    # 删除 .DS_Store
-    find "${DIR}" -name ".DS_Store" -delete 2>/dev/null || true
-    
-    cd "${DIR}"
-    fnpack build > /dev/null 2>&1
-    cd "$PROJECT_DIR"
-    
-    mv "${DIR}/${APP_NAME}.fpk" "${RELEASE_DIR}/${APP_NAME}-v${VERSION}-${LABEL}.fpk"
-    rm -rf "${DIR}"
-    echo "✅"
+    echo "🔨 编译 linux/${arch}..."
+    (
+        cd server
+        GOCACHE="$GOCACHE_DIR" CGO_ENABLED=0 GOOS=linux GOARCH="$arch" \
+            go build -trimpath -ldflags="$LDFLAGS" -o "$binary" .
+    )
+
+    mkdir -p "$package_dir"
+    cp -R fnpack/. "$package_dir/"
+    rm -rf "$package_dir/app/server" "$package_dir/app/www"
+    mkdir -p "$package_dir/app/server" "$package_dir/app/www"
+    cp "$binary" "$package_dir/app/server/notepad"
+    chmod +x "$package_dir/app/server/notepad"
+    cp -R web/dist/. "$package_dir/app/www/"
+    sed -e "s/^version.*/version               = ${VERSION#v}/" \
+        -e "s/^platform.*/platform              = ${platform}/" \
+        "$package_dir/manifest" > "$package_dir/manifest.tmp"
+    mv "$package_dir/manifest.tmp" "$package_dir/manifest"
+    find "$package_dir" -name '.DS_Store' -delete
+
+    (cd "$package_dir" && fnpack build)
+    mv "$package_dir/${APP_NAME}.fpk" "$RELEASE_DIR/${APP_NAME}-v${VERSION#v}-${label}.fpk"
+    echo "✅ ${APP_NAME}-v${VERSION#v}-${label}.fpk"
 }
 
-echo ""
-build_fnpack "arm64" "arm" "fnos-arm64"
-build_fnpack "amd64" "x86" "fnos-amd64"
+build_fnpack arm64 arm fnos-arm64
+build_fnpack amd64 x86 fnos-amd64
 
-mv fnpack/manifest.bak fnpack/manifest
-
-echo ""
-echo "✅ 完成!"
-ls -lh "${RELEASE_DIR}"/*.fpk | awk '{print "  " $NF " (" $5 ")"}'
+echo "✅ 飞牛安装包已输出到 ${RELEASE_DIR}/"
+ls -lh "$RELEASE_DIR"/*.fpk

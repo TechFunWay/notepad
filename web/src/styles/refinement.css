@@ -467,9 +467,9 @@
 }
 
 #app .dashboard-container {
-  width: min(100%, 960px);
-  margin: 0 auto;
-  padding: clamp(34px, 6vw, 76px) clamp(26px, 5vw, 64px);
+  width: 100%;
+  margin: 0;
+  padding: clamp(34px, 5vw, 72px) clamp(26px, 3vw, 56px);
 }
 
 #app .dashboard-header {
@@ -635,7 +635,7 @@
 
 #app .recent-notes-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 420px));
   gap: 10px;
 }
 
@@ -880,14 +880,14 @@
 }
 
 #app .tiptap-editor .editor-content {
-  padding: 38px clamp(24px, 6vw, 84px);
+  padding: 38px clamp(24px, 3vw, 56px);
   background: var(--bg-primary);
 }
 
 #app .tiptap-editor .editor-content .ProseMirror,
 #app .view-content {
-  width: min(100%, 760px);
-  margin-inline: auto;
+  width: min(100%, 1120px);
+  margin-inline: 0;
   color: var(--text-primary);
   font-size: 17px;
   line-height: 1.9;
@@ -958,9 +958,9 @@
 }
 
 #app .view-footer {
-  width: min(100%, 760px);
+  width: min(100%, 1120px);
   align-items: center;
-  margin-inline: auto;
+  margin-inline: 0;
 }
 
 #app .view-tags {

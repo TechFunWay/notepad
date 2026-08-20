@@ -92,6 +92,11 @@ import Image from '@tiptap/extension-image'
 import { ElMessage } from 'element-plus'
 import { Picture, RefreshLeft, RefreshRight } from '@element-plus/icons-vue'
 import api from '@/api/request'
+import {
+  toRuntimeUploadHtml,
+  toRuntimeUploadUrl,
+  toStoredUploadHtml
+} from '@/utils/upload'
 
 const props = defineProps({
   modelValue: {
@@ -119,9 +124,9 @@ const editor = useEditor({
       allowBase64: true
     })
   ],
-  content: props.modelValue,
+  content: toRuntimeUploadHtml(props.modelValue),
   onUpdate: ({ editor }) => {
-    emit('update:modelValue', editor.getHTML())
+    emit('update:modelValue', toStoredUploadHtml(editor.getHTML()))
   }
 })
 
@@ -131,8 +136,8 @@ const textColor = computed(() => {
 })
 
 watch(() => props.modelValue, (newValue) => {
-  if (editor.value && newValue !== editor.value.getHTML()) {
-    editor.value.commands.setContent(newValue)
+  if (editor.value && newValue !== toStoredUploadHtml(editor.value.getHTML())) {
+    editor.value.commands.setContent(toRuntimeUploadHtml(newValue), false)
   }
 })
 
@@ -178,7 +183,10 @@ async function uploadImage(file) {
       }
     })
     
-    editor.value.chain().focus().insertContent(`<img src="${data.url}" alt="图片" />`).run()
+    editor.value.chain().focus().setImage({
+      src: toRuntimeUploadUrl(data.url),
+      alt: '图片'
+    }).run()
   } catch (error) {
     ElMessage.error('图片上传失败，请重试')
     console.error('Image upload error:', error)

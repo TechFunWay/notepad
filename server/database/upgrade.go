@@ -18,7 +18,26 @@ type upgrade struct {
 var upgrades = []upgrade{
 	{"1.0.0", upgrade_v1_0_0},
 	{"1.2.0", nil},
-	// {"1.3.0", nil},  // fn 为 nil 表示空升级，仅记录版本
+	{"1.2.1", upgrade_v1_2_1},
+	{"1.2.2", nil},
+	{"1.2.3", nil},
+	{"1.2.4", nil},
+	{"1.2.5", nil},
+	{"1.2.6", nil},
+	{"1.3.0", nil},
+}
+
+func upgrade_v1_2_1(tx *sql.Tx) error {
+	_, err := tx.Exec(`CREATE TABLE IF NOT EXISTS fnos_bindings (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL UNIQUE,
+		fnos_user_id INTEGER NOT NULL UNIQUE,
+		fnos_username TEXT NOT NULL,
+		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+	)`)
+	return err
 }
 
 func runUpgrades(appVersion string) error {

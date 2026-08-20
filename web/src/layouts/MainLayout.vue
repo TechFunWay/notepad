@@ -204,8 +204,8 @@ async function handleLogout() {
     type: 'warning'
   })
   if (!confirmed) return
-  auth.logout()
-  window.location.href = '/login'
+  await auth.logout()
+  await router.replace('/login')
 }
 
 onMounted(fetchVersion)
