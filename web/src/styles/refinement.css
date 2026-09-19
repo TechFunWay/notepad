@@ -635,11 +635,12 @@
 
 #app .recent-notes-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 420px));
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 420px));
   gap: 10px;
 }
 
 #app .recent-note-item {
+  min-width: 0;
   min-height: 142px;
   padding: 17px;
   background: var(--bg-primary);
@@ -1604,11 +1605,12 @@
   }
 
   #app .notes-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
   }
 
   #app .note-card {
+    min-width: 0;
     min-height: 126px;
     padding: 15px;
   }
@@ -1708,6 +1710,11 @@
     padding-left: 14px;
   }
 
+  /* 悬停高亮热区向卡片四周探出 8px，触屏无悬停却会把页面撑出横向滚动 */
+  #app .stat-card-action::before {
+    display: none;
+  }
+
   #app .stat-icon {
     width: 32px;
     height: 32px;
@@ -1727,11 +1734,12 @@
   }
 
   #app .recent-notes-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 7px;
   }
 
   #app .recent-note-item {
+    min-width: 0;
     min-height: 112px;
     padding: 14px;
   }

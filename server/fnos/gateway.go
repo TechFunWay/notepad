@@ -23,6 +23,13 @@ type gatewayContextKey struct{}
 
 func IsGatewayRequest(ctx context.Context) bool { return ctx.Value(gatewayContextKey{}) == true }
 
+// GatewayContext 给请求上下文打上网关标记。生产路径由 NewHTTPServer 的
+// ConnContext 对整条网关 socket 连接统一设置；导出是为了让鉴权中间件的
+// 测试能在单个请求上模拟网关连接，测试之外不要使用。
+func GatewayContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, gatewayContextKey{}, true)
+}
+
 func Listen(address string, cfg Config) ([]Listener, error) {
 	tcpListener, err := net.Listen("tcp", address)
 	if err != nil {

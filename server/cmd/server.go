@@ -47,6 +47,9 @@ func StartServer(port int, dataDir, webDir, uploadDir, shareDirs string, fnOSApp
 	}
 
 	handler.SetUploadDir(uploadPath)
+	// 部署形态与数据目录：匿名统计上报用
+	handler.StatsDeviceType = handler.DetectDeviceType(fnOSApp)
+	handler.SetDataDir(cfg.DataDir)
 
 	gin.SetMode(gin.ReleaseMode)
 	fnOSConfig := fnos.Config{Enabled: fnOSApp, Socket: gatewaySocket, Prefix: gatewayPrefix}

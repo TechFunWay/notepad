@@ -31,5 +31,6 @@ echo "============================================"
 echo ""
 echo "📁 release/v${VERSION}/"
 ls -lh "release/v${VERSION}/"*.tar.gz 2>/dev/null | grep -v "all" | awk '{print "  平台包: " $NF " (" $5 ")"}'
+ls -lh "release/v${VERSION}/"*.zip 2>/dev/null | grep -v screenshots | awk '{print "  平台包: " $NF " (" $5 ")"}'
 ls -lh "release/v${VERSION}/"*.fpk 2>/dev/null | awk '{print "  飞牛包: " $NF " (" $5 ")"}'
 echo ""

@@ -95,19 +95,54 @@
         >
           <el-icon><Sunny v-if="isDark" /><Moon v-else /></el-icon>
         </button>
-        <router-link to="/profile" class="mobile-avatar" aria-label="个人设置">
-          {{ userInitial }}
-        </router-link>
+        <el-dropdown trigger="click" placement="bottom-end" class="mobile-account-dropdown">
+          <button class="mobile-avatar" type="button" aria-label="打开账号菜单">
+            {{ userInitial }}
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="router.push('/profile')">
+                <el-icon><User /></el-icon>
+                个人设置
+              </el-dropdown-item>
+              <el-dropdown-item divided @click="handleLogout">
+                <el-icon><SwitchButton /></el-icon>
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </header>
 
     <main id="main-content" class="app-content" tabindex="-1">
+      <!-- 赞赏横幅：仅管理员可见，未支持当前版本前常驻展示（关闭不记忆，
+           刷新后再次出现，升级到新版本后也会再次出现） -->
+      <div v-if="support.bannerVisible && !support.donateSupported" class="donate-banner" role="note">
+        <span class="donate-banner-text">☕ 如果记事本对你有帮助，欢迎请作者喝杯咖啡——1 元也是心意，完全自愿。</span>
+        <span class="donate-banner-actions">
+          <button type="button" class="donate-banner-link" @click="support.open()">去赞赏</button>
+          <button type="button" class="donate-banner-close" title="关闭" aria-label="关闭赞赏横幅" @click="support.dismissBanner()">×</button>
+        </span>
+      </div>
       <router-view v-slot="{ Component }">
         <transition name="page-fade" mode="out-in">
           <component :is="Component" />
         </transition>
       </router-view>
     </main>
+
+    <!-- 支持按钮：常驻入口，始终可以打开赞赏弹窗 -->
+    <button
+      v-if="user?.role === 'admin'"
+      type="button"
+      class="support-fab"
+      aria-label="支持作者"
+      title="支持作者"
+      @click="support.open()"
+    >☕</button>
+
+    <SupportModal />
 
     <nav v-if="!immersiveMode" class="mobile-nav" aria-label="移动端主导航">
       <router-link
@@ -144,11 +179,14 @@ import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
 import { message } from '@/utils/message'
 import api from '@/api/request'
+import { useSupportStore } from '@/stores/support'
+import SupportModal from '@/components/SupportModal.vue'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const { isDark, toggleTheme } = useTheme()
+const support = useSupportStore()
 
 const user = computed(() => auth.user)
 const userInitial = computed(() => user.value?.username?.charAt(0)?.toUpperCase() || 'U')
@@ -191,6 +229,8 @@ async function fetchVersion() {
   try {
     const { data } = await api.get('/version')
     version.value = data.version || '1.0.0'
+    // 版本信息顺带交给赞赏提示调度（仅管理员生效）
+    await support.init(auth.isAdmin, data)
   } catch {
     version.value = '1.0.0'
   }
@@ -410,6 +450,13 @@ watch(
   font-weight: 800;
 }
 
+/* 手机端头像是下拉菜单的触发按钮，重置 button 默认样式以对齐原链接外观 */
+.mobile-avatar {
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
 .user-avatar {
   width: 38px;
   height: 38px;
@@ -448,6 +495,86 @@ watch(
   min-height: 100dvh;
   margin-left: var(--app-sidebar-width);
   padding: 20px;
+}
+
+/* 赞赏横幅：未支持当前版本前常驻展示，关闭不记忆 */
+.donate-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  color: #fff;
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+  border-radius: 12px;
+  font-size: 13px;
+  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.18);
+}
+
+.donate-banner-text {
+  min-width: 0;
+}
+
+.donate-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.donate-banner-link {
+  padding: 0;
+  color: #fff;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.donate-banner-link:hover {
+  opacity: 0.85;
+}
+
+.donate-banner-close {
+  padding: 0 2px;
+  color: #fff;
+  background: none;
+  border: 0;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.donate-banner-close:hover {
+  opacity: 0.85;
+}
+
+/* 支持按钮：常驻入口，始终可以打开赞赏弹窗 */
+.support-fab {
+  position: fixed;
+  right: 22px;
+  bottom: 24px;
+  z-index: 90;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  border: 0;
+  border-radius: 999px;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(249, 115, 22, 0.3);
+  transition: transform 160ms ease;
+}
+
+.support-fab:hover {
+  transform: scale(1.06);
 }
 
 .mobile-header,
@@ -573,6 +700,14 @@ watch(
     min-height: calc(100dvh - 130px);
     margin-left: 0;
     padding: 10px;
+  }
+
+  .support-fab {
+    right: 14px;
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
   }
 
   .mobile-nav {

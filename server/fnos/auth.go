@@ -2,7 +2,6 @@ package fnos
 
 import (
 	"crypto/rand"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -26,29 +25,49 @@ type Identity struct {
 }
 
 func IdentityFromRequest(c *gin.Context) (Identity, bool) {
+	identity, ok := GatewayIdentity(c)
+	if !ok {
+		if !IsGatewayRequest(c.Request.Context()) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "请从飞牛桌面中的应用入口使用 NAS 登录"})
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "未获取到飞牛 NAS 登录信息"})
+		}
+		return Identity{}, false
+	}
+	return identity, true
+}
+
+// GatewayIdentity 仅解析网关注入的身份头，不写任何响应。身份头只在网关
+// socket 连接上可信：直连端口的 TCP 客户端可以伪造同名请求头。
+func GatewayIdentity(c *gin.Context) (Identity, bool) {
 	if !IsGatewayRequest(c.Request.Context()) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "请从飞牛桌面中的应用入口使用 NAS 登录"})
 		return Identity{}, false
 	}
 	uid, err := strconv.ParseInt(c.GetHeader("X-Trim-Userid"), 10, 64)
 	username := c.GetHeader("X-Trim-Username")
 	if err != nil || uid <= 0 || username == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未获取到飞牛 NAS 登录信息"})
 		return Identity{}, false
 	}
 	return Identity{UserID: uid, Username: username, IsAdmin: c.GetHeader("X-Trim-Isadmin") == "true"}, true
 }
 
-func Login(identity Identity) (*model.User, string, error) {
+// ResolveUser 把网关身份映射到该 NAS 账号已绑定的应用账号，映射不到时
+// 返回 false。鉴权中间件用它充当网关域上的隐式登录态。
+func ResolveUser(identity Identity) (*model.User, bool) {
 	user := &model.User{}
 	err := database.DB.QueryRow(`SELECT u.id, u.username, u.security_question, u.role, u.created_at, u.updated_at
 		FROM users u JOIN fnos_bindings f ON f.user_id = u.id WHERE f.fnos_user_id = ?`, identity.UserID).
 		Scan(&user.ID, &user.Username, &user.SecurityQuestion, &user.Role, &user.CreatedAt, &user.UpdatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, "", ErrNotBound
-	}
 	if err != nil {
-		return nil, "", err
+		return nil, false
+	}
+	return user, true
+}
+
+func Login(identity Identity) (*model.User, string, error) {
+	user, ok := ResolveUser(identity)
+	if !ok {
+		return nil, "", ErrNotBound
 	}
 	if _, err := database.DB.Exec("UPDATE fnos_bindings SET fnos_username = ?, updated_at = CURRENT_TIMESTAMP WHERE fnos_user_id = ?", identity.Username, identity.UserID); err != nil {
 		return nil, "", err

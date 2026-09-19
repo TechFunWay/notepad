@@ -10,8 +10,9 @@ VERSION=$(cat VERSION)
 
 APP_NAME="techfunway-notepad"
 IMAGE_NAME="techfunways/notepad"
-RELEASE_DIR="release/v${VERSION}"
+RELEASE_DIR="${PROJECT_DIR}/release/v${VERSION}"
 BUILDER_NAME="${BUILDER_NAME:-notepad-multiarch}"
+OCI_FILE="${RELEASE_DIR}/${APP_NAME}-v${VERSION}-multiarch.oci.tar"
 
 # build-all.sh 压缩后即清理中间目录；Docker 构建需要 linux 平台目录，
 # 缺失时从对应的 tar.gz 解包，用完在脚本末尾清理
@@ -27,7 +28,7 @@ for arch in amd64 arm64; do
 done
 
 echo "============================================"
-echo "  Docker 多平台镜像构建 v${VERSION}"
+echo "  Docker 多平台 OCI 归档 v${VERSION}"
 echo "============================================"
 
 # 删除 .DS_Store
@@ -36,7 +37,8 @@ find "${RELEASE_DIR}" -name ".DS_Store" -delete 2>/dev/null || true
 # 切换到 default context
 docker context use default 2>/dev/null || true
 
-# 确保有可用的 buildx builder（多平台交叉编译需要 docker-container 驱动）
+# 合并 manifest 的 OCI 归档必须用 docker-container 驱动的 builder，
+# 默认驱动不推 registry 导不出多平台合并结果
 if ! docker buildx inspect "${BUILDER_NAME}" >/dev/null 2>&1; then
     echo ""
     echo "🔧 创建 buildx builder: ${BUILDER_NAME}"
@@ -81,15 +83,14 @@ ENV TZ=Asia/Shanghai
 ENTRYPOINT ["/app/notepad"]
 EOF
 
-# 构建多平台镜像（导出为 docker 本地镜像，需要 --output type=docker）
+# 导出为本地 OCI 归档（不推送 registry），随发行目录分发
 docker buildx build \
     --builder "${BUILDER_NAME}" \
     --platform linux/amd64,linux/arm64 \
-    --output type=docker \
+    --output "type=oci,dest=${OCI_FILE}" \
     --build-arg VERSION=${VERSION} \
     -t "${IMAGE_NAME}:v${VERSION}" \
     -t "${IMAGE_NAME}:latest" \
-    --load \
     .
 
 rm -f Dockerfile
@@ -104,28 +105,7 @@ done
 docker buildx use default 2>/dev/null || true
 
 echo ""
-echo "✅ 完成!"
+echo "✅ 多平台 OCI 归档完成: ${OCI_FILE}"
 echo ""
-echo "📦 本地镜像:"
-docker images "${IMAGE_NAME}" --format "  {{.Repository}}:{{.Tag}} ({{.Size}})" 2>/dev/null | sort -u
+echo "  目标机器载入: docker load -i ${APP_NAME}-v${VERSION}-multiarch.oci.tar"
 echo ""
-echo "📝 多平台验证（已通过 buildx 多架构构建）:"
-echo "  - linux/amd64  ✅"
-echo "  - linux/arm64  ✅"
-echo ""
-echo "  提示：Docker Desktop 在 macOS 上 --load 多平台镜像仅加载当前平台。"
-echo "  如需在其他架构机器上直接拉取，请推送到 registry："
-echo "    docker buildx build --builder ${BUILDER_NAME} --platform linux/amd64,linux/arm64 \\"
-echo "      --push -t ${IMAGE_NAME}:v${VERSION} ."
-echo ""
-echo "💡 运行命令示例（推荐生产环境设置 JWT_SECRET 与时区）:"
-echo "  docker run -d --name notepad \\"
-echo "    -p 8904:8904 \\"
-echo "    -v \$(pwd)/data:/app/data \\"
-echo "    -e JWT_SECRET=请改为你自己的强随机密钥 \\"
-echo "    -e TZ=Asia/Shanghai \\"
-echo "    --restart unless-stopped \\"
-echo "    ${IMAGE_NAME}:v${VERSION}"
-echo ""
-echo "  访问: http://localhost:8904"
-echo "  端口: 8904  |  数据目录: /app/data  |  环境变量: PORT / JWT_SECRET / TZ"
