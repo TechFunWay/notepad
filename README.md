@@ -2,6 +2,18 @@
 
 一款轻量、精美的多用户记事本 Web 应用，支持富文本编辑、标签分类管理、暗色模式、多用户数据隔离，可部署到飞牛NAS、Docker 或直接运行。
 
+## 下载与安装
+
+| 渠道 | 获取方式 |
+|---|---|
+| GitHub Releases | <https://github.com/TechFunWay/notepad/releases> —— 各平台压缩包、飞牛 `fpk` 安装包与 `docker-compose.yml` |
+| Gitee 发行版 | <https://gitee.com/TechFunWay/notepad/releases> —— 国内镜像，产物与 GitHub 一致 |
+| Docker 镜像 | `docker pull techfunways/notepad:latest`（amd64 / arm64 多平台） |
+| 飞牛 fnOS | 在飞牛应用中心手动安装 Releases 里的 `.fpk` 安装包（amd64 / arm64） |
+| 官网介绍页 | <https://techfunway.wycto.cn/fnapp/notepad> |
+
+> 默认端口 `8904`；数据默认是挂载目录下的 SQLite 单文件，备份即拷贝，恢复支持上传本地备份文件。
+
 ## 技术栈
 
 - **前端**: Vue 3 + Element Plus + Vite
